@@ -30,7 +30,7 @@ const scriptBody = (node: string, cli: string, target: Target) => {
 # @raycast.schemaVersion 1
 # @raycast.title Focus ${title}
 # @raycast.mode silent
-# @raycast.packageName foxhop
+# @raycast.packageName Fox Hop
 # @raycast.icon ${ICON_FILE}
 
 # Documentation:
