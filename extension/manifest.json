@@ -1,0 +1,20 @@
+{
+  "manifest_version": 2,
+  "name": "foxhop",
+  "description": "Focus a specific Firefox tab on command, driven by Raycast hotkeys through a native host.",
+  "version": "1.0.0",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "foxhop@kud.io"
+    }
+  },
+  "permissions": ["tabs", "nativeMessaging"],
+  "background": {
+    "scripts": ["src/background.js"]
+  },
+  "icons": {
+    "48": "src/icons/icon.svg",
+    "96": "src/icons/icon.svg",
+    "128": "src/icons/icon.svg"
+  }
+}

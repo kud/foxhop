@@ -1,0 +1,5 @@
+node_modules
+dist
+web-ext-artifacts
+*.log
+.amo-metadata.json

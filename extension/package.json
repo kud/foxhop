@@ -1,0 +1,21 @@
+{
+  "name": "foxhop-extension",
+  "version": "1.0.0",
+  "description": "Firefox extension that focuses a tab by URL on request from the foxhop native host.",
+  "private": true,
+  "author": "kud",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "web-ext run --firefox=nightly",
+    "build": "rm -rf web-ext-artifacts/* 2>/dev/null || true && web-ext build --source-dir=. --artifacts-dir=web-ext-artifacts",
+    "lint": "web-ext lint",
+    "sign": "web-ext sign --channel=unlisted"
+  },
+  "devDependencies": {
+    "web-ext": "8.9.0"
+  }
+}
