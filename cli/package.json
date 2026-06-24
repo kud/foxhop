@@ -3,8 +3,26 @@
   "version": "1.0.0",
   "description": "foxhop CLI and native messaging host — focus specific Firefox tabs from macOS",
   "type": "module",
-  "private": true,
   "license": "MIT",
+  "author": "Erwann Mest <m@kud.io>",
+  "homepage": "https://github.com/kud/foxhop#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kud/foxhop.git",
+    "directory": "cli"
+  },
+  "bugs": {
+    "url": "https://github.com/kud/foxhop/issues"
+  },
+  "keywords": [
+    "firefox",
+    "macos",
+    "raycast",
+    "cli",
+    "tabs",
+    "native-messaging",
+    "focus"
+  ],
   "bin": {
     "foxhop": "./dist/cli.js",
     "foxhop-host": "./dist/host-cli.js"
@@ -12,11 +30,15 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsx src/cli.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
   },
   "engines": {
     "node": ">=20"
