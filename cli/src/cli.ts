@@ -17,6 +17,7 @@ import { sendToHost } from "./client.js"
 import { install } from "./install.js"
 import { sync, clearScripts, defaultScriptsDir } from "./sync.js"
 import { fileURLToPath } from "node:url"
+import { bold, dim, cyan, yellow, ok, fail } from "./ui.js"
 
 const browserApp = () => process.env.FOXHOP_BROWSER ?? "Firefox Nightly"
 // Use the absolute path: `open` lives in /usr/bin, which isn't always on PATH
@@ -79,7 +80,9 @@ const focus = defineCommand({
 
     if (!request) {
       console.error(
-        `foxhop: no target named "${args.name}". Edit ${CONFIG_PATH}, or run \`foxhop list\` / \`foxhop init\`.`,
+        fail(
+          `no target named "${args.name}". Edit ${CONFIG_PATH}, or run \`foxhop list\` / \`foxhop init\`.`,
+        ),
       )
       process.exit(1)
     }
@@ -88,15 +91,15 @@ const focus = defineCommand({
       const ack = await sendToHost(request)
       if (ack?.ok && ack.action !== "not-found") foreground()
       else
-        console.error(
-          `foxhop: ${ack?.error ?? "no matching tab and no url to open"}`,
-        )
+        console.error(fail(ack?.error ?? "no matching tab and no url to open"))
     } catch {
       if ("url" in request && request.url) {
         openUrl(request.url)
       } else {
         console.error(
-          "foxhop: cannot reach the host — is Firefox running with the foxhop extension?",
+          fail(
+            "cannot reach the host — is Firefox running with the foxhop extension?",
+          ),
         )
         process.exit(1)
       }
@@ -127,7 +130,9 @@ const list = defineCommand({
     }
     if (!targets.length) {
       console.log(
-        `No targets yet. Run \`foxhop init\` for an example, or edit ${CONFIG_PATH}.`,
+        dim(
+          `No targets yet. Run \`foxhop init\` for an example, or edit ${CONFIG_PATH}.`,
+        ),
       )
       return
     }
@@ -135,9 +140,12 @@ const list = defineCommand({
       ...targets.filter((target) => target.favorite),
       ...targets.filter((target) => !target.favorite),
     ]
+    const width = Math.max(...ordered.map((target) => target.name.length))
     for (const target of ordered) {
-      const star = target.favorite ? "★ " : "  "
-      console.log(`${star}${target.name.padEnd(16)} ${target.match}`)
+      const star = target.favorite ? yellow("★") : " "
+      console.log(
+        `${star} ${cyan(target.name.padEnd(width))}  ${dim(target.match)}`,
+      )
     }
   },
 })
@@ -154,12 +162,12 @@ const tabs = defineCommand({
     }
     if (!openTabs.length) {
       console.error(
-        "foxhop: no tabs (is Firefox running with the foxhop extension?)",
+        fail("no tabs — is Firefox running with the foxhop extension?"),
       )
       process.exit(1)
     }
     for (const tab of openTabs) {
-      console.log(`${tab.title}\n  ${tab.url}`)
+      console.log(`${bold(tab.title)}\n  ${dim(tab.url)}`)
     }
   },
 })
@@ -171,7 +179,7 @@ const init = defineCommand({
   },
   run: () => {
     const path = writeExampleConfig()
-    console.log(`foxhop: wrote example config and schema next to ${path}`)
+    console.log(ok(`wrote example config + schema → ${dim(path)}`))
   },
 })
 
@@ -208,7 +216,9 @@ const syncCommand = defineCommand({
         return
       }
       console.log(
-        `foxhop: removed ${cleared.removed} script(s) from ${cleared.dir}`,
+        ok(
+          `removed ${bold(String(cleared.removed))} script(s) → ${dim(cleared.dir)}`,
+        ),
       )
       return
     }
@@ -222,12 +232,16 @@ const syncCommand = defineCommand({
       return
     }
     console.log(
-      `foxhop: wrote ${result.written} script(s)` +
-        (result.removed ? `, removed ${result.removed} stale` : "") +
-        ` in ${result.dir}`,
+      ok(
+        `wrote ${bold(String(result.written))} script(s)` +
+          (result.removed ? `, removed ${result.removed} stale` : "") +
+          ` → ${dim(result.dir)}`,
+      ),
     )
     console.log(
-      "Add that folder in Raycast → Extensions → Script Commands → Add Directories, then assign hotkeys.",
+      dim(
+        "Add that folder in Raycast → Extensions → Script Commands → Add Directories, then assign hotkeys.",
+      ),
     )
   },
 })
@@ -271,7 +285,7 @@ const add = defineCommand({
     // url-less targets (name+match only) editable — url is optional in the schema.
     const source = url ?? matchArg
     if (!source) {
-      console.error("foxhop: provide a URL or --match")
+      console.error(fail("provide a URL or --match"))
       process.exit(1)
     }
     const derived = deriveTarget(source)
@@ -288,7 +302,7 @@ const add = defineCommand({
       pick: args.pick as Pick | undefined,
       favorite: args.favorite || existing?.favorite ? true : undefined,
     })
-    console.log(`foxhop: saved "${name}"`)
+    console.log(ok(`saved ${bold(name)}`))
     autoSync()
   },
 })
@@ -305,10 +319,10 @@ const remove = defineCommand({
   run: ({ args }) => {
     const { removed } = removeTarget(String(args.name))
     if (!removed) {
-      console.error(`foxhop: no target named "${args.name}"`)
+      console.error(fail(`no target named "${args.name}"`))
       process.exit(1)
     }
-    console.log(`foxhop: removed "${args.name}"`)
+    console.log(ok(`removed ${bold(String(args.name))}`))
     autoSync()
   },
 })
@@ -328,11 +342,13 @@ const fav = defineCommand({
   run: ({ args }) => {
     const { favorite, found } = toggleFavorite(String(args.name))
     if (!found) {
-      console.error(`foxhop: no target named "${args.name}"`)
+      console.error(fail(`no target named "${args.name}"`))
       process.exit(1)
     }
     console.log(
-      `foxhop: "${args.name}" ${favorite ? "favourited ★" : "unfavourited"}`,
+      ok(
+        `${bold(String(args.name))} ${favorite ? yellow("favourited ★") : "unfavourited"}`,
+      ),
     )
   },
 })

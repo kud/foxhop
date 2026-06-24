@@ -4,6 +4,12 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
+## [1.1.2] — 2026-06-24
+
+### Changed
+
+- Nicer CLI output — `list` aligns to the longest name and colours the favourite star, name, and match; `tabs` and status lines gain colour and ✓/✗ glyphs. Colour is disabled automatically when piped or when `NO_COLOR` is set.
+
 ## [1.1.1] — 2026-06-24
 
 ### Fixed
