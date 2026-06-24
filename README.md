@@ -1,4 +1,8 @@
-# foxhop
+<p align="center">
+  <img src="assets/icon.png" alt="foxhop" width="120" height="120" />
+</p>
+
+<h1 align="center">foxhop</h1>
 
 Focus a specific Firefox tab from **anywhere on macOS** — a global hotkey, a Raycast
 command, or the terminal. Press the key and Firefox comes forward with your ChatGPT /
