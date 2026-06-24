@@ -4,6 +4,12 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
+## [1.1.1] — 2026-06-24
+
+### Fixed
+
+- `add` no longer requires a URL — pass a URL **or** `--match`, so url-less targets (name + match only) can still be created and edited.
+
 ## [1.1.0] — 2026-06-24
 
 ### Added

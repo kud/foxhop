@@ -241,8 +241,9 @@ const add = defineCommand({
   args: {
     url: {
       type: "positional",
-      required: true,
-      description: "URL of the tab (e.g. https://gemini.google.com)",
+      required: false,
+      description:
+        "URL of the tab (e.g. https://gemini.google.com) — or use --match",
     },
     name: {
       type: "string",
@@ -264,15 +265,23 @@ const add = defineCommand({
     favorite: { type: "boolean", description: "Pin to the top of the list" },
   },
   run: ({ args }) => {
-    const url = String(args.url)
-    const derived = deriveTarget(url)
+    const url = args.url ? String(args.url) : undefined
+    const matchArg = args.match ? String(args.match) : undefined
+    // A target needs either a URL (derive everything) or a bare match. This keeps
+    // url-less targets (name+match only) editable — url is optional in the schema.
+    const source = url ?? matchArg
+    if (!source) {
+      console.error("foxhop: provide a URL or --match")
+      process.exit(1)
+    }
+    const derived = deriveTarget(source)
     const name = args.name ?? derived.name
     // Preserve an existing target's favourite — editing must not clear the star
     // (favourite is toggled from the list, not this form).
     const existing = findTarget(readConfig(), name)
     upsertTarget({
       name,
-      match: args.match ?? derived.match,
+      match: matchArg ?? derived.match,
       url,
       title: args.title ?? derived.title,
       strategy: args.strategy as Strategy | undefined,
