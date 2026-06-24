@@ -14,7 +14,7 @@ import {
 } from "./config.js"
 import { sendToHost } from "./client.js"
 import { install } from "./install.js"
-import { sync, defaultScriptsDir } from "./sync.js"
+import { sync, clearScripts, defaultScriptsDir } from "./sync.js"
 import { fileURLToPath } from "node:url"
 
 const browserApp = () => process.env.FOXHOP_BROWSER ?? "Firefox Nightly"
@@ -184,9 +184,24 @@ const syncCommand = defineCommand({
       type: "string",
       description: `Output directory (default: ${defaultScriptsDir()})`,
     },
+    clean: {
+      type: "boolean",
+      description: "Remove all generated scripts instead of writing them",
+    },
     json: { type: "boolean", description: "Output the result as JSON" },
   },
   run: ({ args }) => {
+    if (args.clean) {
+      const cleared = clearScripts(args.dir)
+      if (args.json) {
+        process.stdout.write(JSON.stringify(cleared) + "\n")
+        return
+      }
+      console.log(
+        `foxhop: removed ${cleared.removed} script(s) from ${cleared.dir}`,
+      )
+      return
+    }
     const result = sync(
       process.execPath,
       fileURLToPath(import.meta.url),

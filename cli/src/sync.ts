@@ -69,3 +69,15 @@ export const sync = (node: string, cli: string, dir = defaultScriptsDir()) => {
 
   return { dir, written: targets.length, removed: removed.length }
 }
+
+// Remove every generated script (and the icon) without writing new ones.
+export const clearScripts = (dir = defaultScriptsDir()) => {
+  if (!existsSync(dir)) return { dir, written: 0, removed: 0 }
+  const removed = readdirSync(dir)
+    .filter((file) => file.startsWith("focus-") && file.endsWith(".sh"))
+    .filter((file) => isGenerated(join(dir, file)))
+  for (const file of removed) rmSync(join(dir, file))
+  const icon = join(dir, ICON_FILE)
+  if (existsSync(icon)) rmSync(icon)
+  return { dir, written: 0, removed: removed.length }
+}
