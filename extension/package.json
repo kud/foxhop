@@ -17,6 +17,6 @@
     "publish": "bash publish.sh"
   },
   "devDependencies": {
-    "web-ext": "8.9.0"
+    "web-ext": "10.4.0"
   }
 }
