@@ -1,5 +1,6 @@
 import { defineCommand, runMain } from "citty"
 import { spawn } from "node:child_process"
+import { existsSync } from "node:fs"
 import {
   readConfig,
   findTarget,
@@ -30,6 +31,15 @@ const runOpen = (args: string[]) => {
 }
 const foreground = () => runOpen(["-a", browserApp()])
 const openUrl = (url: string) => runOpen([url])
+
+// Keep the generated hotkey scripts mirrored to the targets after a mutation —
+// but only once the user has opted in by generating them at least once (the
+// scripts dir exists). No opt-in → nothing is created, so there's no clutter.
+const autoSync = () => {
+  if (existsSync(defaultScriptsDir())) {
+    sync(process.execPath, fileURLToPath(import.meta.url))
+  }
+}
 
 const focus = defineCommand({
   meta: {
@@ -270,6 +280,7 @@ const add = defineCommand({
       favorite: args.favorite || existing?.favorite ? true : undefined,
     })
     console.log(`foxhop: saved "${name}"`)
+    autoSync()
   },
 })
 
@@ -289,6 +300,7 @@ const remove = defineCommand({
       process.exit(1)
     }
     console.log(`foxhop: removed "${args.name}"`)
+    autoSync()
   },
 })
 

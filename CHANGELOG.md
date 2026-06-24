@@ -11,6 +11,7 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 - `foxhop fav <name>` toggles a target's favourite; `foxhop list` now shows favourites first (★).
 - URL-first `add` — `foxhop add <url>` derives the name, match, and title from the URL (flags still override).
 - `foxhop sync --clean` removes all generated hotkey scripts.
+- Generated scripts stay mirrored to your targets automatically — once you've run `sync` once, `add`/`remove` keep the scripts folder up to date with no manual step.
 
 ## [1.0.3] — 2026-06-24
 
