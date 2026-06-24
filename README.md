@@ -2,6 +2,9 @@
 
 <img src="assets/icon.png" width="120" alt="foxhop icon" />
 
+<br />
+<br />
+
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
 ![npm](https://img.shields.io/npm/v/%40kud%2Ffoxhop-cli?style=flat-square&color=CB3837)
