@@ -12,6 +12,7 @@ export interface Target {
   url?: string
   strategy?: Strategy
   pick?: Pick
+  favorite?: boolean
 }
 
 export interface Config {
@@ -66,6 +67,10 @@ const SCHEMA = {
             enum: ["recent", "first", "pinned"],
             default: "recent",
             description: "Which tab to focus when several match",
+          },
+          favorite: {
+            type: "boolean",
+            description: "Pin this target to the top of the list",
           },
         },
       },
@@ -133,4 +138,45 @@ export const removeTarget = (
   const removed = filtered.length !== targets.length
   if (removed) writeConfig({ targets: filtered })
   return { targets: filtered, removed }
+}
+
+export const toggleFavorite = (
+  name: string,
+): { favorite: boolean; found: boolean } => {
+  const { targets } = readConfig()
+  let favorite = false
+  let found = false
+  const next = targets.map((target) => {
+    if (target.name !== name) return target
+    found = true
+    favorite = !target.favorite
+    const { favorite: _was, ...rest } = target
+    return favorite ? { ...rest, favorite: true } : rest
+  })
+  if (found) writeConfig({ targets: next })
+  return { favorite, found }
+}
+
+// Derive a name / match / title from a URL (or bare hostname) so the user only
+// has to supply a URL. The hostname is the match; the first non-generic label
+// becomes the name; the name title-cased is the title. All overridable.
+export const deriveTarget = (
+  url: string,
+): { name: string; match: string; title: string } => {
+  let host = url.trim()
+  try {
+    host = new URL(url).hostname
+  } catch {
+    host = url.replace(/^[a-z]+:\/\//i, "").split("/")[0] || url
+  }
+  const labels = host.split(".").filter(Boolean)
+  const generic = new Set(["www", "app", "web", "m", "my", "go"])
+  const candidates = labels.length > 1 ? labels.slice(0, -1) : labels
+  const name = (
+    candidates.find((label) => !generic.has(label)) ??
+    candidates[0] ??
+    host
+  ).toLowerCase()
+  const title = name.charAt(0).toUpperCase() + name.slice(1)
+  return { name, match: host, title }
 }

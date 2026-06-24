@@ -6,6 +6,8 @@ import {
   writeExampleConfig,
   upsertTarget,
   removeTarget,
+  toggleFavorite,
+  deriveTarget,
   CONFIG_PATH,
   type Strategy,
   type Pick,
@@ -119,8 +121,13 @@ const list = defineCommand({
       )
       return
     }
-    for (const target of targets) {
-      console.log(`${target.name.padEnd(16)} ${target.match}`)
+    const ordered = [
+      ...targets.filter((target) => target.favorite),
+      ...targets.filter((target) => !target.favorite),
+    ]
+    for (const target of ordered) {
+      const star = target.favorite ? "★ " : "  "
+      console.log(`${star}${target.name.padEnd(16)} ${target.match}`)
     }
   },
 })
@@ -201,20 +208,26 @@ const syncCommand = defineCommand({
 })
 
 const add = defineCommand({
-  meta: { name: "add", description: "Add or update a target in tabs.json" },
+  meta: {
+    name: "add",
+    description:
+      "Add or update a target — name/match/title derive from the URL",
+  },
   args: {
-    name: {
+    url: {
       type: "positional",
       required: true,
-      description: "Target id (used by `foxhop focus <name>`)",
+      description: "URL of the tab (e.g. https://gemini.google.com)",
     },
+    name: {
+      type: "string",
+      description: "Override the derived id (used by `foxhop focus <name>`)",
+    },
+    title: { type: "string", description: "Override the derived label" },
     match: {
       type: "string",
-      required: true,
-      description: "Substring matched against tab URLs",
+      description: "Override the derived match (default: the URL hostname)",
     },
-    url: { type: "string", description: "URL opened when no tab matches" },
-    title: { type: "string", description: "Human-friendly label" },
     strategy: {
       type: "string",
       description: "hostname | prefix | exact | search",
@@ -223,17 +236,25 @@ const add = defineCommand({
       type: "string",
       description: "recent | first | pinned (which tab when several match)",
     },
+    favorite: { type: "boolean", description: "Pin to the top of the list" },
   },
   run: ({ args }) => {
+    const url = String(args.url)
+    const derived = deriveTarget(url)
+    const name = args.name ?? derived.name
+    // Preserve an existing target's favourite — editing must not clear the star
+    // (favourite is toggled from the list, not this form).
+    const existing = findTarget(readConfig(), name)
     upsertTarget({
-      name: String(args.name),
-      match: String(args.match),
-      url: args.url,
-      title: args.title,
+      name,
+      match: args.match ?? derived.match,
+      url,
+      title: args.title ?? derived.title,
       strategy: args.strategy as Strategy | undefined,
       pick: args.pick as Pick | undefined,
+      favorite: args.favorite || existing?.favorite ? true : undefined,
     })
-    console.log(`foxhop: saved "${args.name}"`)
+    console.log(`foxhop: saved "${name}"`)
   },
 })
 
@@ -256,6 +277,30 @@ const remove = defineCommand({
   },
 })
 
+const fav = defineCommand({
+  meta: {
+    name: "fav",
+    description: "Toggle a target's favourite (pins it to the top of the list)",
+  },
+  args: {
+    name: {
+      type: "positional",
+      required: true,
+      description: "Target id to toggle",
+    },
+  },
+  run: ({ args }) => {
+    const { favorite, found } = toggleFavorite(String(args.name))
+    if (!found) {
+      console.error(`foxhop: no target named "${args.name}"`)
+      process.exit(1)
+    }
+    console.log(
+      `foxhop: "${args.name}" ${favorite ? "favourited ★" : "unfavourited"}`,
+    )
+  },
+})
+
 const NAME = "foxhop"
 const subCommands = {
   focus,
@@ -263,6 +308,7 @@ const subCommands = {
   tabs,
   add,
   remove,
+  fav,
   init,
   sync: syncCommand,
   install: installCommand,

@@ -4,6 +4,19 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
+## [1.1.0] — 2026-06-24
+
+### Added
+
+- `foxhop fav <name>` toggles a target's favourite; `foxhop list` now shows favourites first (★).
+- URL-first `add` — `foxhop add <url>` derives the name, match, and title from the URL (flags still override).
+
+## [1.0.3] — 2026-06-24
+
+### Changed
+
+- Generated Raycast hotkey scripts now group under "Fox Hop" (was "foxhop"); re-run `foxhop sync` to update existing scripts.
+
 ## [1.0.2] — 2026-06-24
 
 ### Highlights
