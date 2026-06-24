@@ -177,6 +177,7 @@ const syncCommand = defineCommand({
       type: "string",
       description: `Output directory (default: ${defaultScriptsDir()})`,
     },
+    json: { type: "boolean", description: "Output the result as JSON" },
   },
   run: ({ args }) => {
     const result = sync(
@@ -184,6 +185,10 @@ const syncCommand = defineCommand({
       fileURLToPath(import.meta.url),
       args.dir,
     )
+    if (args.json) {
+      process.stdout.write(JSON.stringify(result) + "\n")
+      return
+    }
     console.log(
       `foxhop: wrote ${result.written} script(s)` +
         (result.removed ? `, removed ${result.removed} stale` : "") +

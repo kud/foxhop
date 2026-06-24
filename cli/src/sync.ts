@@ -9,8 +9,10 @@ import {
 } from "node:fs"
 import { join } from "node:path"
 import { readConfig, CONFIG_DIR, type Target } from "./config.js"
+import { ICON_PNG_BASE64 } from "./icon.js"
 
 const MARKER = "@foxhop.generated"
+const ICON_FILE = "foxhop.png"
 
 export const defaultScriptsDir = () => join(CONFIG_DIR, "scripts")
 
@@ -29,7 +31,7 @@ const scriptBody = (node: string, cli: string, target: Target) => {
 # @raycast.title Focus ${title}
 # @raycast.mode silent
 # @raycast.packageName foxhop
-# @raycast.icon 🦊
+# @raycast.icon ${ICON_FILE}
 
 # Documentation:
 # @raycast.description Focus the ${title} tab in Firefox (opens it if not already open).
@@ -51,6 +53,7 @@ const isGenerated = (path: string) => {
 export const sync = (node: string, cli: string, dir = defaultScriptsDir()) => {
   const { targets } = readConfig()
   mkdirSync(dir, { recursive: true })
+  writeFileSync(join(dir, ICON_FILE), Buffer.from(ICON_PNG_BASE64, "base64"))
 
   const wanted = new Set(targets.map((target) => `focus-${target.name}.sh`))
   const removed = (existsSync(dir) ? readdirSync(dir) : [])

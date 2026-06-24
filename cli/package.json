@@ -1,6 +1,6 @@
 {
   "name": "@kud/foxhop-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "foxhop CLI and native messaging host — focus specific Firefox tabs from macOS",
   "type": "module",
   "license": "MIT",
