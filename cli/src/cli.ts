@@ -16,13 +16,18 @@ import { sync, defaultScriptsDir } from "./sync.js"
 import { fileURLToPath } from "node:url"
 
 const browserApp = () => process.env.FOXHOP_BROWSER ?? "Firefox Nightly"
-const foreground = () =>
-  spawn("open", ["-a", browserApp()], {
+// Use the absolute path: `open` lives in /usr/bin, which isn't always on PATH
+// (e.g. when invoked from Raycast). Swallow spawn errors so they never crash the CLI.
+const runOpen = (args: string[]) => {
+  const child = spawn("/usr/bin/open", args, {
     stdio: "ignore",
     detached: true,
-  }).unref()
-const openUrl = (url: string) =>
-  spawn("open", [url], { stdio: "ignore", detached: true }).unref()
+  })
+  child.on("error", () => {})
+  child.unref()
+}
+const foreground = () => runOpen(["-a", browserApp()])
+const openUrl = (url: string) => runOpen([url])
 
 const focus = defineCommand({
   meta: {
