@@ -256,21 +256,30 @@ const remove = defineCommand({
   },
 })
 
+const NAME = "foxhop"
+const subCommands = {
+  focus,
+  list,
+  tabs,
+  add,
+  remove,
+  init,
+  sync: syncCommand,
+  install: installCommand,
+}
+
 runMain(
   defineCommand({
     meta: {
-      name: "foxhop",
+      name: NAME,
       description: "Focus specific Firefox tabs from anywhere on macOS",
     },
-    subCommands: {
-      focus,
-      list,
-      tabs,
-      add,
-      remove,
-      init,
-      sync: syncCommand,
-      install: installCommand,
+    subCommands,
+    run: ({ rawArgs }) => {
+      if (rawArgs.some((arg) => arg in subCommands)) return
+      console.log(
+        `Usage: ${NAME} <command>\nRun \`${NAME} --help\` to list commands.`,
+      )
     },
   }),
 )
