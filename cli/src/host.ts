@@ -21,13 +21,20 @@ export const runHost = () => {
       resolve(ack)
     }),
   )
-  process.stdin.on("end", () => process.exit(0))
-
-  if (existsSync(SOCKET_PATH)) {
+  // Leave no stale socket behind: a dead socket file refuses connections
+  // (ECONNREFUSED) and would make the CLI think the host is unreachable.
+  const cleanup = () => {
     try {
-      unlinkSync(SOCKET_PATH)
+      if (existsSync(SOCKET_PATH)) unlinkSync(SOCKET_PATH)
     } catch {}
   }
+  process.stdin.on("end", () => {
+    cleanup()
+    process.exit(0)
+  })
+  process.on("exit", cleanup)
+
+  cleanup()
 
   const server = net.createServer((socket) => {
     socket.setEncoding("utf8")

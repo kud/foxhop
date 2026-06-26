@@ -1,6 +1,6 @@
 import { defineCommand, runMain } from "citty"
 import { spawn } from "node:child_process"
-import { existsSync } from "node:fs"
+import { existsSync, unlinkSync } from "node:fs"
 import {
   readConfig,
   findTarget,
@@ -14,6 +14,7 @@ import {
   type Pick,
 } from "./config.js"
 import { sendToHost } from "./client.js"
+import { SOCKET_PATH } from "./constants.js"
 import { install } from "./install.js"
 import { sync, clearScripts, defaultScriptsDir } from "./sync.js"
 import { fileURLToPath } from "node:url"
@@ -92,7 +93,26 @@ const focus = defineCommand({
       if (ack?.ok && ack.action !== "not-found") foreground()
       else
         console.error(fail(ack?.error ?? "no matching tab and no url to open"))
-    } catch {
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException)?.code
+      // A stale socket (host died without cleanup) refuses connections. Never
+      // silently open a fresh tab on every press — that spawns endless tabs.
+      // Remove the dead socket and tell the user how to repair the host.
+      if (code === "ECONNREFUSED" || code === "ENOENT") {
+        if (existsSync(SOCKET_PATH)) {
+          try {
+            unlinkSync(SOCKET_PATH)
+          } catch {}
+        }
+        console.error(
+          fail(
+            "foxhop host not running. Run `foxhop install`, then restart Firefox (or reload the extension).",
+          ),
+        )
+        process.exit(1)
+      }
+      // Genuine timeout (host reachable but extension never answered) — fall
+      // back to opening the URL once so the action still does something.
       if ("url" in request && request.url) {
         openUrl(request.url)
       } else {
