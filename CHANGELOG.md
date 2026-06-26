@@ -4,7 +4,19 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
-## Unreleased — 2026-06-27
+## [1.2.1] — 2026-06-27
+
+### Fixes
+
+- The Raycast script-command icon now reflects the updated foxhop branding — the base64-encoded PNG embedded in `cli/src/icon.ts` has been regenerated from the new `foxhop-128.png` asset, replacing the old SVG-derived image. ([422a027](https://github.com/kud/foxhop/commit/422a0275bb436862665ed97d83a7551f3a694b53))
+
+### Documentation
+
+- The README header icon now points to the canonical versioned path under `assets/icons/`. ([84ae8b5](https://github.com/kud/foxhop/commit/84ae8b5b10b5ae07ba2ad710523d441b143ec955))
+
+---
+
+## [1.2.0] — 2026-06-27
 
 ### Highlights
 
