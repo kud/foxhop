@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/icon.png" width="120" alt="foxhop icon" />
+<img src="assets/icons/foxhop-256.png" width="120" alt="foxhop icon" />
 
 <br />
 <br />
