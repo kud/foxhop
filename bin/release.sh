@@ -44,6 +44,17 @@ npm version "$BUMP" --no-git-tag-version --prefix cli >/dev/null
 VERSION=$(node -p "require('./cli/package.json').version")
 TAG="cli-v${VERSION}"
 
+# Promote the changelog's top "## Unreleased" heading to this version, so each
+# release closes its own entry. Without this, stale "Unreleased" headings stack
+# up and the next changelog run prepends a second one. Only the first heading is
+# touched; older released entries are left untouched.
+if [[ -f CHANGELOG.md ]] && grep -q '^## Unreleased' CHANGELOG.md; then
+  VER="$VERSION" RELEASE_DATE="$(date +%F)" perl -i -pe '
+    if (!$done && /^## Unreleased/) { $_ = "## [$ENV{VER}] — $ENV{RELEASE_DATE}\n"; $done = 1 }
+  ' CHANGELOG.md
+  git add CHANGELOG.md
+fi
+
 git add cli/package.json cli/package-lock.json
 git commit -m "🏷️ release(cli): v${VERSION}"
 git tag -a "$TAG" -m "$TAG"
