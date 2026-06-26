@@ -4,6 +4,13 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
+## [1.1.3] — 2026-06-26
+
+### Fixed
+
+- **Hotkeys now focus your tab instead of opening an endless stream of new ones.** When Firefox is launched from the Dock, its `PATH` is stripped down and hides version-managed Node (mise, nvm, asdf) and Homebrew — so the native host could never start, and every hotkey press silently opened a fresh tab instead of focusing the one already open. `foxhop install` now writes a launcher that hard-codes Node's absolute path, so the host starts the same way no matter how Firefox was opened. (Re-run `foxhop install` after a Node upgrade to refresh the path.)
+- When the bridge genuinely is unreachable, `foxhop focus` now clears the stale socket and prints a clear "host not running" message instead of opening a tab. The host also removes its socket on exit, so a dead socket can't linger and trigger the fallback.
+
 ## [1.1.2] — 2026-06-24
 
 ### Changed
