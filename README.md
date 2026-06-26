@@ -9,11 +9,12 @@
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
 ![npm](https://img.shields.io/npm/v/%40kud%2Ffoxhop-cli?style=flat-square&color=CB3837)
 ![Firefox](https://img.shields.io/badge/Firefox-FF7139?style=flat-square&logo=firefox-browser&logoColor=white)
+![Raycast](https://img.shields.io/badge/Raycast-FF6363?style=flat-square&logo=raycast&logoColor=white)
 ![MIT](https://img.shields.io/badge/licence-MIT-22C55E?style=flat-square)
 
 **Focus a specific Firefox tab from anywhere on macOS.**
 
-<a href="https://kud.io/projects/foxhop">Website</a> · <a href="https://kud.io/projects/foxhop/docs">Documentation</a> · <a href="https://www.npmjs.com/package/@kud/foxhop-cli">npm</a>
+<a href="https://kud.io/projects/foxhop">Website</a> · <a href="https://kud.io/projects/foxhop/docs">Documentation</a> · <a href="https://www.npmjs.com/package/@kud/foxhop-cli">npm</a> · <a href="https://www.raycast.com/kud/foxhop">Raycast</a>
 
 </div>
 
