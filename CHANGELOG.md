@@ -4,6 +4,18 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
+## Unreleased — 2026-06-27
+
+### Highlights
+
+- Release tagging now uses the `cli-v<version>` convention (e.g. `cli-v1.1.4`) and a dedicated `bin/release.sh` script handles the full bump-commit-tag-push cycle in one step. The CI release workflow has been updated to match, so only `cli-v*` tags trigger a publish. ([af4d68d](https://github.com/kud/foxhop/commit/af4d68d6db24fd9d2a13d8f5429ec3d0d7d95396))
+
+### Internal
+
+- Removed the `assets/build-icons.sh` build script and replaced tracked icon metadata with freshly regenerated PNG EXIF data; updated the main icon dimensions from 512×512 to 594×594 with a dark background. ([4af4bde](https://github.com/kud/foxhop/commit/4af4bde47703de72b1660e6ba61e4b9033699a08))
+
+---
+
 ## [1.1.3] — 2026-06-26
 
 ### Fixed
