@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Fox Hop",
   "description": "Focus a specific Firefox tab on command — driven by the foxhop CLI and Raycast.",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "browser_specific_settings": {
     "gecko": {
       "id": "foxhop@kud.io",
