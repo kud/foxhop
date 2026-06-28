@@ -13,7 +13,8 @@
     "dev": "web-ext run --firefox=nightly",
     "build": "rm -rf web-ext-artifacts/* 2>/dev/null || true && web-ext build --source-dir=. --artifacts-dir=web-ext-artifacts --ignore-files=publish.sh",
     "lint": "web-ext lint --ignore-files=publish.sh",
-    "sign": "web-ext sign --channel=unlisted",
+    "sign:listed": "web-ext sign --channel=listed --ignore-files=publish.sh",
+    "sign:self": "web-ext sign --channel=unlisted --ignore-files=publish.sh",
     "publish": "bash publish.sh"
   },
   "devDependencies": {

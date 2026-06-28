@@ -8,8 +8,8 @@
 # This script owns foxhop's release policy: bump cli/, commit, tag `cli-v<ver>`
 # at the repo root, and push — which fires .github/workflows/release.yml.
 #
-# The Firefox extension releases on its own line (`extension-v*`); this script only
-# touches the CLI.
+# The Firefox extension releases on its own line (`extension-v*`) via
+# bin/release-ext.sh; this script only touches the CLI.
 #
 # Usage: bin/release.sh <patch|minor|major>
 
@@ -39,8 +39,9 @@ if [[ -n $(git status --porcelain) ]]; then
   git aicommit
 fi
 
-# Bump the CLI package only — no git tag here; we tag at the repo root below.
-npm version "$BUMP" --no-git-tag-version --prefix cli >/dev/null
+# Bump the CLI workspace only — no git tag here; we tag at the repo root below.
+# `-w cli` keeps the root package-lock.json in sync with the new version.
+npm version "$BUMP" --no-git-tag-version -w cli >/dev/null
 VERSION=$(node -p "require('./cli/package.json').version")
 TAG="cli-v${VERSION}"
 
@@ -55,7 +56,7 @@ if [[ -f CHANGELOG.md ]] && grep -q '^## Unreleased' CHANGELOG.md; then
   git add CHANGELOG.md
 fi
 
-git add cli/package.json cli/package-lock.json
+git add cli/package.json package-lock.json
 git commit -m "🏷️ release(cli): v${VERSION}"
 git tag -a "$TAG" -m "$TAG"
 

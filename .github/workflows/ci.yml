@@ -8,9 +8,6 @@ on:
 jobs:
   cli:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: cli
     strategy:
       matrix:
         node: [20, 22]
@@ -19,20 +16,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - run: npm install
-      - run: npm run build
-      - run: npm run typecheck
-      - run: npm test
+      - run: npm ci
+      - run: npm run build -w cli
+      - run: npm run typecheck -w cli
+      - run: npm run test -w cli
 
   extension:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: extension
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
-      - run: npm run lint
+      - run: npm ci
+      - run: npm run lint -w extension

@@ -1,0 +1,22 @@
+name: Release Extension
+
+on:
+  push:
+    tags:
+      - "extension-v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - name: Sign & upload the listed AMO version
+        run: npm run sign:listed -w extension
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.MOZILLA_ADDONS_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.MOZILLA_ADDONS_JWT_SECRET }}

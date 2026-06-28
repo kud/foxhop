@@ -1,19 +1,24 @@
 #!/bin/bash
-# Publish the Fox Hop Firefox extension to addons.mozilla.org (AMO).
+# Publish the Fox Hop Firefox extension to the LISTED channel on AMO — the public
+# page (addons.mozilla.org/firefox/addon/foxhop) that users install from.
 #
-# The FIRST submission of a new add-on is always manual (listing details + review
-# on the Developer Hub), so this builds the package, opens the Hub, and reveals the
-# artifact to upload. For LATER version updates of an add-on that already exists on
-# AMO, set WEB_EXT_API_KEY / WEB_EXT_API_SECRET and run `npm run sign` to do it
-# non-interactively.
+# Why listed: signing via the unlisted/Self channel produces a self-hosted .xpi
+# that never appears on the public AMO page. Only listed uploads move the version
+# shown there. Use `npm run sign:self` if you ever need a self-hosted build instead.
+#
+# web-ext authenticates with WEB_EXT_API_KEY / WEB_EXT_API_SECRET; we map them
+# from the canonical MOZILLA_ADDONS_JWT_* credentials in the shell environment.
+# Get or rotate the key+secret at:
+#   https://addons.mozilla.org/en-US/developers/addon/api/key/
 set -euo pipefail
 cd "$(dirname "$0")"
 
-echo "→ Building the extension package…"
-npm run build
+: "${MOZILLA_ADDONS_JWT_ISSUER:?set MOZILLA_ADDONS_JWT_ISSUER (AMO JWT issuer)}"
+: "${MOZILLA_ADDONS_JWT_SECRET:?set MOZILLA_ADDONS_JWT_SECRET (AMO JWT secret)}"
+export WEB_EXT_API_KEY="$MOZILLA_ADDONS_JWT_ISSUER"
+export WEB_EXT_API_SECRET="$MOZILLA_ADDONS_JWT_SECRET"
 
-ARTIFACT_DIR="$(pwd)/web-ext-artifacts"
-echo "→ Opening the AMO Developer Hub."
-echo "  Upload the package from: $ARTIFACT_DIR"
-open "https://addons.mozilla.org/developers/"
-open "$ARTIFACT_DIR" 2>/dev/null || true
+VERSION=$(node -p "require('./manifest.json').version")
+echo "→ Submitting Fox Hop v${VERSION} to the AMO listed channel…"
+npm run sign:listed
+echo "✓ Submitted v${VERSION} to the listed channel — it goes live once Mozilla approves it."

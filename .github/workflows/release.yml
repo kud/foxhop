@@ -18,8 +18,5 @@ jobs:
           node-version: "24"
       - run: npm install -g npm@latest
       - run: npm ci
-        working-directory: cli
-      - run: npm run build
-        working-directory: cli
-      - run: npm publish --access public
-        working-directory: cli
+      - run: npm run build -w cli
+      - run: npm publish -w cli --access public
