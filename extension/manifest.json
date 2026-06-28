@@ -18,14 +18,23 @@
   "browser_action": {
     "default_title": "Fox Hop",
     "default_popup": "src/popup/popup.html",
-    "default_icon": {
-      "16": "src/icons/icon.svg",
-      "32": "src/icons/icon.svg"
-    }
+    "default_icon": "src/icons/icon-mono.svg",
+    "theme_icons": [
+      {
+        "light": "src/icons/icon-mono-dark.svg",
+        "dark": "src/icons/icon-mono.svg",
+        "size": 16
+      },
+      {
+        "light": "src/icons/icon-mono-dark.svg",
+        "dark": "src/icons/icon-mono.svg",
+        "size": 32
+      }
+    ]
   },
   "icons": {
-    "48": "src/icons/icon.svg",
-    "96": "src/icons/icon.svg",
-    "128": "src/icons/icon.svg"
+    "48": "src/icons/foxhop-48.png",
+    "96": "src/icons/foxhop-96.png",
+    "128": "src/icons/foxhop-128.png"
   }
 }

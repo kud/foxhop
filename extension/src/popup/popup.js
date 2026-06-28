@@ -2,8 +2,19 @@ const listEl = document.getElementById("list")
 const stateEl = document.getElementById("state")
 const searchEl = document.getElementById("search")
 const addEl = document.getElementById("add-current")
+const viewList = document.getElementById("view-list")
+const editor = document.getElementById("editor")
+const editorName = document.getElementById("editor-name")
+const editorCancel = document.getElementById("editor-cancel")
+const fTitle = document.getElementById("f-title")
+const fMatch = document.getElementById("f-match")
+const fUrl = document.getElementById("f-url")
+const fStrategy = document.getElementById("f-strategy")
+const fPick = document.getElementById("f-pick")
 
 let targets = []
+let tabFavicons = {}
+let editing = null
 
 const send = (message) => browser.runtime.sendMessage(message)
 
@@ -13,25 +24,64 @@ const showState = (text) => {
   listEl.hidden = true
 }
 
-const orderedTargets = () => [
-  ...targets.filter((t) => t.favorite),
-  ...targets.filter((t) => !t.favorite),
-]
+// Deterministic hue per target so each monogram is distinct yet stable, and
+// legible on both light and dark backgrounds.
+const hueFor = (key) => {
+  let hash = 0
+  for (const char of key) hash = (hash * 31 + char.charCodeAt(0)) % 360
+  return hash
+}
+
+const hostOf = (target) => {
+  try {
+    return new URL(target.url ?? `https://${target.match}`).hostname
+  } catch {
+    return target.match
+  }
+}
+
+// A target is "open" if a live tab matches its host — the same signal that
+// decides favicon vs monogram, so the cue and the ordering always agree.
+const isOpen = (target) => Boolean(tabFavicons[hostOf(target)])
+
+const orderedTargets = () => {
+  const openFirst = (a, b) => Number(isOpen(b)) - Number(isOpen(a))
+  return [
+    ...targets.filter((t) => t.favorite).sort(openFirst),
+    ...targets.filter((t) => !t.favorite).sort(openFirst),
+  ]
+}
 
 const filtered = () => {
-  const q = searchEl.value.trim().toLowerCase()
-  if (!q) return orderedTargets()
+  const query = searchEl.value.trim().toLowerCase()
+  if (!query) return orderedTargets()
   return orderedTargets().filter((t) =>
-    `${t.name} ${t.title ?? ""} ${t.match}`.toLowerCase().includes(q),
+    `${t.name} ${t.title ?? ""} ${t.match}`.toLowerCase().includes(query),
   )
 }
 
-const button = (cls, label, title, onClick) => {
+const iconFor = (target) => {
+  const favicon = tabFavicons[hostOf(target)]
+  if (favicon) {
+    const img = document.createElement("img")
+    img.className = "favicon"
+    img.src = favicon
+    img.alt = ""
+    return img
+  }
+  const monogram = document.createElement("span")
+  monogram.className = "monogram"
+  monogram.style.background = `hsl(${hueFor(target.name)} 60% 45%)`
+  monogram.textContent = (target.title ?? target.name).slice(0, 1)
+  return monogram
+}
+
+const rowButton = (cls, glyph, label, onClick) => {
   const el = document.createElement("button")
   el.type = "button"
   el.className = `row-btn ${cls}`
-  el.textContent = label
-  el.title = title
+  el.textContent = glyph
+  el.setAttribute("aria-label", label)
   el.addEventListener("click", (event) => {
     event.stopPropagation()
     onClick()
@@ -43,10 +93,6 @@ const renderRow = (target) => {
   const row = document.createElement("li")
   row.className = "row"
 
-  const monogram = document.createElement("span")
-  monogram.className = "monogram"
-  monogram.textContent = (target.title ?? target.name).slice(0, 1)
-
   const text = document.createElement("span")
   text.className = "row-text"
   const name = document.createElement("div")
@@ -57,7 +103,7 @@ const renderRow = (target) => {
   match.textContent = target.match
   text.append(name, match)
 
-  const fav = button(
+  const fav = rowButton(
     target.favorite ? "fav on" : "fav",
     target.favorite ? "★" : "☆",
     "Toggle favourite",
@@ -66,12 +112,13 @@ const renderRow = (target) => {
       if (ack?.ok) refresh(ack.targets)
     },
   )
-  const remove = button("remove", "×", "Delete target", async () => {
+  const edit = rowButton("edit", "✎", "Edit target", () => openEditor(target))
+  const remove = rowButton("remove", "×", "Delete target", async () => {
     const ack = await send({ type: "remove", name: target.name })
     if (ack?.ok) refresh(ack.targets)
   })
 
-  row.append(monogram, text, fav, remove)
+  row.append(iconFor(target), text, fav, edit, remove)
   row.addEventListener("click", () => focus(target))
   return row
 }
@@ -99,19 +146,53 @@ const focus = async (target) => {
   if (ack?.ok) window.close()
 }
 
-const load = async () => {
-  const status = await send({ type: "status" }).catch(() => null)
-  if (!status?.connected) {
-    showState("Native host not connected. Run ‘foxhop install’.")
-    addEl.disabled = true
-    return
+const openEditor = (target) => {
+  editing = target
+  editorName.textContent = target.title ?? target.name
+  fTitle.value = target.title ?? ""
+  fMatch.value = target.match ?? ""
+  fUrl.value = target.url ?? ""
+  fStrategy.value = target.strategy ?? "hostname"
+  fPick.value = target.pick ?? "recent"
+  viewList.hidden = true
+  editor.hidden = false
+}
+
+const closeEditor = () => {
+  editing = null
+  editor.hidden = true
+  viewList.hidden = false
+}
+
+editor.addEventListener("submit", async (event) => {
+  event.preventDefault()
+  const next = {
+    ...editing,
+    title: fTitle.value.trim() || undefined,
+    match: fMatch.value.trim(),
+    url: fUrl.value.trim() || undefined,
+    strategy: fStrategy.value,
+    pick: fPick.value,
   }
-  const ack = await send({ type: "targets" }).catch(() => null)
-  if (!ack?.ok) {
-    showState("Couldn’t reach the foxhop host.")
-    return
+  const ack = await send({ type: "upsert", target: next })
+  if (ack?.ok) {
+    refresh(ack.targets)
+    closeEditor()
   }
-  refresh(ack.targets ?? [])
+})
+
+editorCancel.addEventListener("click", closeEditor)
+
+const buildTabFavicons = async () => {
+  const tabs = await browser.tabs.query({})
+  const map = {}
+  for (const tab of tabs) {
+    if (!tab.url || !tab.favIconUrl) continue
+    try {
+      map[new URL(tab.url).hostname] = tab.favIconUrl
+    } catch {}
+  }
+  return map
 }
 
 addEl.addEventListener("click", async () => {
@@ -122,5 +203,21 @@ addEl.addEventListener("click", async () => {
 })
 
 searchEl.addEventListener("input", render)
+
+const load = async () => {
+  const status = await send({ type: "status" }).catch(() => null)
+  if (!status?.connected) {
+    showState("Native host not connected. Run ‘foxhop install’.")
+    addEl.disabled = true
+    return
+  }
+  tabFavicons = await buildTabFavicons()
+  const ack = await send({ type: "targets" }).catch(() => null)
+  if (!ack?.ok) {
+    showState("Couldn’t reach the foxhop host.")
+    return
+  }
+  refresh(ack.targets ?? [])
+}
 
 load()

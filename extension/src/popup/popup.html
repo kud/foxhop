@@ -13,33 +13,79 @@
         href="https://github.com/kud/foxhop"
         target="_blank"
         rel="noopener"
-        title="About Fox Hop"
         aria-label="About Fox Hop"
         >&#9432;</a
       >
     </header>
 
-    <button class="action" id="add-current" type="button">
-      <span class="action-label">Add current tab&hellip;</span>
-      <span class="chevron" aria-hidden="true">&rsaquo;</span>
-    </button>
+    <!-- List view -->
+    <div id="view-list">
+      <button class="action" id="add-current" type="button">
+        <span class="action-icon" aria-hidden="true">+</span>
+        <span class="action-label">Add current tab&hellip;</span>
+      </button>
 
-    <div class="section">
-      <span class="section-title">Targets</span>
+      <div class="section"><span class="section-title">Targets</span></div>
+
+      <div class="search">
+        <input
+          id="search"
+          type="search"
+          placeholder="Search targets"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+
+      <ul class="list" id="list"></ul>
+      <p class="state" id="state" hidden></p>
     </div>
 
-    <div class="search">
-      <input
-        id="search"
-        type="search"
-        placeholder="Search targets"
-        autocomplete="off"
-        spellcheck="false"
-      />
-    </div>
-
-    <ul class="list" id="list"></ul>
-    <p class="state" id="state" hidden></p>
+    <!-- Edit view -->
+    <form class="editor" id="editor" hidden>
+      <div class="editor-name" id="editor-name"></div>
+      <label class="field">
+        <span>Title</span>
+        <input id="f-title" type="text" autocomplete="off" />
+      </label>
+      <label class="field">
+        <span>Match</span>
+        <input id="f-match" type="text" autocomplete="off" spellcheck="false" />
+      </label>
+      <label class="field">
+        <span>URL</span>
+        <input
+          id="f-url"
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Opened when no tab matches"
+        />
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>Strategy</span>
+          <select id="f-strategy">
+            <option value="hostname">hostname</option>
+            <option value="prefix">prefix</option>
+            <option value="exact">exact</option>
+            <option value="search">search</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Pick</span>
+          <select id="f-pick">
+            <option value="recent">recent</option>
+            <option value="first">first</option>
+            <option value="pinned">pinned</option>
+          </select>
+        </label>
+      </div>
+      <div class="editor-actions">
+        <button type="button" class="btn" id="editor-cancel">Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </form>
 
     <script src="popup.js"></script>
   </body>
