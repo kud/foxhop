@@ -95,13 +95,69 @@ const handle = async (request) => {
 
 let port
 
+// --- Popup bridge ----------------------------------------------------------
+// The popup can't read ~/.config/foxhop/tabs.json (browser sandbox), so it asks
+// the native host for the targets and edits them through it. Focusing, by
+// contrast, runs entirely here, so we call focusTab() directly — no host needed.
+const cfgPending = new Map()
+let cfgSequence = 0
+
+const requestConfig = (op, extra = {}) =>
+  new Promise((resolve, reject) => {
+    if (!port) {
+      reject(new Error("native host not connected"))
+      return
+    }
+    const cfgId = ++cfgSequence
+    cfgPending.set(cfgId, resolve)
+    setTimeout(() => {
+      if (cfgPending.delete(cfgId)) reject(new Error("host timeout"))
+    }, 3000)
+    port.postMessage({ cfgId, op, ...extra })
+  })
+
+browser.runtime.onMessage.addListener((message) => {
+  switch (message?.type) {
+    case "status":
+      return Promise.resolve({ ok: true, connected: Boolean(port) })
+    case "targets":
+      return requestConfig("config:read")
+    case "focus":
+      return focusTab(message.target).then((result) => ({
+        ok: true,
+        ...result,
+      }))
+    case "add":
+      return requestConfig("config:add", {
+        url: message.url,
+        title: message.title,
+      })
+    case "remove":
+      return requestConfig("config:remove", { name: message.name })
+    case "favorite":
+      return requestConfig("config:favorite", { name: message.name })
+    default:
+      return Promise.resolve({ ok: false, error: "unknown message" })
+  }
+})
+
 const connect = () => {
   port = browser.runtime.connectNative(HOST_NAME)
 
-  port.onMessage.addListener(async (request) => {
-    const { reqId } = request
+  port.onMessage.addListener(async (message) => {
+    // Replies to popup-initiated config requests carry a cfgId.
+    if (message.cfgId) {
+      const resolve = cfgPending.get(message.cfgId)
+      if (resolve) {
+        cfgPending.delete(message.cfgId)
+        resolve(message)
+      }
+      return
+    }
+    // Otherwise it's a host-initiated tab operation to actuate.
+    const { reqId } = message
     try {
-      const result = await handle(request)
+      const result = await handle(message)
       port.postMessage({ reqId, ...result })
     } catch (error) {
       port.postMessage({ reqId, ok: false, error: String(error) })

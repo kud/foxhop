@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - run: npm ci
+      - run: npm install
       - run: npm run build -w cli
       - run: npm run typecheck -w cli
       - run: npm run test -w cli
@@ -28,5 +28,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci
+      - run: npm install
       - run: npm run lint -w extension

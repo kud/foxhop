@@ -17,6 +17,6 @@ jobs:
         with:
           node-version: "24"
       - run: npm install -g npm@latest
-      - run: npm ci
+      - run: npm install
       - run: npm run build -w cli
       - run: npm publish -w cli --access public
