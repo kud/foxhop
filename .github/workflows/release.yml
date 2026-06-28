@@ -17,6 +17,8 @@ jobs:
         with:
           node-version: "24"
       - run: npm install -g npm@latest
-      - run: npm install
+      # Drop the macOS-generated lockfile so npm resolves rollup's Linux-only
+      # optional dep fresh on the runner (npm/cli#4828).
+      - run: rm -f package-lock.json && npm install
       - run: npm run build -w cli
       - run: npm publish -w cli --access public
