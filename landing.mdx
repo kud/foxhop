@@ -1,10 +1,10 @@
 ---
-title: foxhop
+title: Fox Hop
 ---
 
 <Hero
   badge="MIT · macOS · Firefox · Raycast"
-  title="foxhop"
+  title="Fox Hop"
   tagline="Focus a specific Firefox tab from anywhere on macOS — one product across the terminal, Raycast, and the browser, all driving the same configuration."
 >
   <Action href="/projects/foxhop/docs" primary>
@@ -25,23 +25,30 @@ title: foxhop
 <Section
   eyebrow="The ecosystem"
   title="One product, three surfaces"
-  sub="foxhop isn't a single CLI — it's a small ecosystem, and every surface reads the same targets from ~/.config/foxhop/tabs.json. Reach for whichever fits the moment; they all drive the same configuration."
+  sub="Fox Hop isn't a single CLI — it's a small ecosystem, and every surface reads the same targets from ~/.config/foxhop/tabs.json. Reach for whichever fits the moment; they all drive the same configuration."
 >
   <Features>
     <Feature title="CLI + native host">
       The engine. `@kud/foxhop-cli` focuses tabs, manages targets, and bridges
       macOS to Firefox over native messaging — scriptable from the terminal or
       bound to any global hotkey.
+
+      [View on npm ↗](https://www.npmjs.com/package/@kud/foxhop-cli)
     </Feature>
     <Feature title="Firefox extension">
       The in-browser half of the bridge. It receives a request from the native
       host and switches to the matching tab — opening it at the configured URL
       when it isn't already there.
+
+      [Get the add-on ↗](https://addons.mozilla.org/firefox/addon/foxhop/)
     </Feature>
     <Feature title="Raycast extension">
       A launcher-native way to search, add, edit, and focus targets — plus
       generated per-tab hotkey scripts via `foxhop sync`.
+
+      [Open in Raycast ↗](https://www.raycast.com/kud/foxhop)
     </Feature>
+
   </Features>
 </Section>
 
