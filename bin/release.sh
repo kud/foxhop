@@ -8,7 +8,7 @@
 # This script owns foxhop's release policy: bump cli/, commit, tag `cli-v<ver>`
 # at the repo root, and push — which fires .github/workflows/release.yml.
 #
-# The Firefox extension releases on its own line (`ext-v*`); this script only
+# The Firefox extension releases on its own line (`extension-v*`); this script only
 # touches the CLI.
 #
 # Usage: bin/release.sh <patch|minor|major>
