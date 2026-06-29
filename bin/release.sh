@@ -9,7 +9,7 @@
 # at the repo root, and push — which fires .github/workflows/release.yml.
 #
 # The Firefox extension releases on its own line (`extension-v*`) via
-# bin/release-ext.sh; this script only touches the CLI.
+# bin/release-webext.sh; this script only touches the CLI.
 #
 # Usage: bin/release.sh <patch|minor|major>
 

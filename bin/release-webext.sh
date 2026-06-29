@@ -3,15 +3,15 @@
 # foxhop extension release — version bump for the Firefox extension surface.
 #
 # Mirrors bin/release.sh (the CLI line). npm is the version authority: we bump
-# extension/package.json via `npm version -w extension`, then sync that version
-# into extension/manifest.json (the value AMO actually reads). We commit, tag
-# `extension-v<ver>` at the repo root, and push — which fires
-# .github/workflows/release-ext.yml to sign + upload the listed AMO version.
+# webextension/package.json via `npm version -w webextension`, then sync that version
+# into webextension/manifest.json (the value AMO actually reads). We commit, tag
+# `webext-v<ver>` at the repo root, and push — which fires
+# .github/workflows/release-webext.yml to sign + upload the listed AMO version.
 #
 # The CLI releases on its own line (`cli-v*`) via bin/release.sh; this script only
 # touches the extension.
 #
-# Usage: bin/release-ext.sh <patch|minor|major>
+# Usage: bin/release-webext.sh <patch|minor|major>
 
 set -euo pipefail
 
@@ -19,7 +19,7 @@ BUMP="${1:-}"
 case "$BUMP" in
   patch | minor | major) ;;
   *)
-    echo "usage: bin/release-ext.sh <patch|minor|major>" >&2
+    echo "usage: bin/release-webext.sh <patch|minor|major>" >&2
     exit 1
     ;;
 esac
@@ -42,13 +42,13 @@ fi
 # Bump the extension workspace, then mirror the version into the manifest. The
 # perl edit targets only the top-level "version" line (not "manifest_version"),
 # preserving the file's formatting.
-npm version "$BUMP" --no-git-tag-version -w extension >/dev/null
-VERSION=$(node -p "require('./extension/package.json').version")
-perl -i -pe 's/^(\s*"version":\s*")[^"]+(")/${1}'"$VERSION"'${2}/' extension/manifest.json
-TAG="extension-v${VERSION}"
+npm version "$BUMP" --no-git-tag-version -w webextension >/dev/null
+VERSION=$(node -p "require('./webextension/package.json').version")
+perl -i -pe 's/^(\s*"version":\s*")[^"]+(")/${1}'"$VERSION"'${2}/' webextension/manifest.json
+TAG="webext-v${VERSION}"
 
-git add extension/package.json extension/manifest.json package-lock.json
-git commit -m "🏷️ release(extension): v${VERSION}"
+git add webextension/package.json webextension/manifest.json package-lock.json
+git commit -m "🏷️ release(webext): v${VERSION}"
 git tag -a "$TAG" -m "$TAG"
 
 # Fail loud if the tag did not materialise — never report a release that the
@@ -61,4 +61,4 @@ fi
 git push origin main
 git push origin "$TAG"
 
-echo "✓ released ${TAG} — release-ext.yml will sign & upload the listed AMO version ${VERSION}"
+echo "✓ released ${TAG} — release-webext.yml will sign & upload the listed AMO version ${VERSION}"

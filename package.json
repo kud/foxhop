@@ -8,19 +8,19 @@
   "type": "module",
   "workspaces": [
     "cli",
-    "extension"
+    "webextension"
   ],
   "scripts": {
     "build": "npm run build -w cli",
     "typecheck": "npm run typecheck -w cli",
     "test": "npm run test -w cli",
-    "lint": "npm run lint -w extension",
+    "lint": "npm run lint -w webextension",
     "dev:cli": "npm run dev -w cli",
-    "dev:ext": "npm run dev -w extension",
-    "sign:listed": "npm run sign:listed -w extension",
-    "sign:self": "npm run sign:self -w extension",
-    "publish:ext": "npm run publish -w extension",
+    "dev:webext": "npm run dev -w webextension",
+    "sign:listed": "npm run sign:listed -w webextension",
+    "sign:self": "npm run sign:self -w webextension",
+    "publish:webext": "npm run publish -w webextension",
     "release:cli": "bin/release.sh",
-    "release:ext": "bin/release-ext.sh"
+    "release:webext": "bin/release-webext.sh"
   }
 }
