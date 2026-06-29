@@ -1,6 +1,6 @@
 {
   "name": "foxhop",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Fox Hop — focus a Firefox tab by URL. Monorepo: CLI native host + browser extension.",
   "private": true,
   "license": "MIT",
