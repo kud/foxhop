@@ -1,6 +1,6 @@
 {
   "name": "foxhop-extension",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Firefox extension that focuses a tab by URL on request from the foxhop native host.",
   "private": true,
   "author": "kud",
