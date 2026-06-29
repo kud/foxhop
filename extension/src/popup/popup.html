@@ -18,6 +18,14 @@
       >
     </header>
 
+    <!-- Warning view (shown when native host is not connected) -->
+    <div id="view-warning" hidden>
+      <p class="state">
+        Native host not connected.<br />
+        Run <code>foxhop install</code> to get started.
+      </p>
+    </div>
+
     <!-- List view -->
     <div id="view-list">
       <button class="action" id="add-current" type="button">
@@ -45,14 +53,6 @@
     <form class="editor" id="editor" hidden>
       <div class="editor-name" id="editor-name"></div>
       <label class="field">
-        <span>Title</span>
-        <input id="f-title" type="text" autocomplete="off" />
-      </label>
-      <label class="field">
-        <span>Match</span>
-        <input id="f-match" type="text" autocomplete="off" spellcheck="false" />
-      </label>
-      <label class="field">
         <span>URL</span>
         <input
           id="f-url"
@@ -62,25 +62,14 @@
           placeholder="Opened when no tab matches"
         />
       </label>
-      <div class="field-row">
-        <label class="field">
-          <span>Strategy</span>
-          <select id="f-strategy">
-            <option value="hostname">hostname</option>
-            <option value="prefix">prefix</option>
-            <option value="exact">exact</option>
-            <option value="search">search</option>
-          </select>
-        </label>
-        <label class="field">
-          <span>Pick</span>
-          <select id="f-pick">
-            <option value="recent">recent</option>
-            <option value="first">first</option>
-            <option value="pinned">pinned</option>
-          </select>
-        </label>
-      </div>
+      <label class="field">
+        <span>Title</span>
+        <input id="f-title" type="text" autocomplete="off" />
+      </label>
+      <label class="field">
+        <span>Match</span>
+        <input id="f-match" type="text" autocomplete="off" spellcheck="false" />
+      </label>
       <div class="editor-actions">
         <button type="button" class="btn" id="editor-cancel">Cancel</button>
         <button type="submit" class="btn primary">Save</button>

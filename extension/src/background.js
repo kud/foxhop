@@ -132,6 +132,8 @@ browser.runtime.onMessage.addListener((message) => {
         url: message.url,
         title: message.title,
       })
+    case "upsert":
+      return requestConfig("config:upsert", { target: message.target })
     case "remove":
       return requestConfig("config:remove", { name: message.name })
     case "favorite":

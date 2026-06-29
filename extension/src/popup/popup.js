@@ -3,14 +3,13 @@ const stateEl = document.getElementById("state")
 const searchEl = document.getElementById("search")
 const addEl = document.getElementById("add-current")
 const viewList = document.getElementById("view-list")
+const viewWarning = document.getElementById("view-warning")
 const editor = document.getElementById("editor")
 const editorName = document.getElementById("editor-name")
 const editorCancel = document.getElementById("editor-cancel")
 const fTitle = document.getElementById("f-title")
 const fMatch = document.getElementById("f-match")
 const fUrl = document.getElementById("f-url")
-const fStrategy = document.getElementById("f-strategy")
-const fPick = document.getElementById("f-pick")
 
 let targets = []
 let tabFavicons = {}
@@ -126,6 +125,7 @@ const renderRow = (target) => {
 const render = () => {
   const rows = filtered()
   listEl.replaceChildren(...rows.map(renderRow))
+  searchEl.parentElement.hidden = targets.length === 0
   if (!targets.length) {
     showState("No targets yet. Add the current tab to get started.")
   } else if (!rows.length) {
@@ -148,12 +148,13 @@ const focus = async (target) => {
 
 const openEditor = (target) => {
   editing = target
-  editorName.textContent = target.title ?? target.name
+  editorName.textContent =
+    target.title && target.title !== target.name
+      ? `${target.title} (${target.name})`
+      : target.name
+  fUrl.value = target.url ?? ""
   fTitle.value = target.title ?? ""
   fMatch.value = target.match ?? ""
-  fUrl.value = target.url ?? ""
-  fStrategy.value = target.strategy ?? "hostname"
-  fPick.value = target.pick ?? "recent"
   viewList.hidden = true
   editor.hidden = false
 }
@@ -168,11 +169,9 @@ editor.addEventListener("submit", async (event) => {
   event.preventDefault()
   const next = {
     ...editing,
+    url: fUrl.value.trim() || undefined,
     title: fTitle.value.trim() || undefined,
     match: fMatch.value.trim(),
-    url: fUrl.value.trim() || undefined,
-    strategy: fStrategy.value,
-    pick: fPick.value,
   }
   const ack = await send({ type: "upsert", target: next })
   if (ack?.ok) {
@@ -198,23 +197,30 @@ const buildTabFavicons = async () => {
 addEl.addEventListener("click", async () => {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
   if (!tab?.url) return
-  const ack = await send({ type: "add", url: tab.url, title: tab.title })
+  const ack = await send({ type: "add", url: tab.url, title: tab.title }).catch(
+    () => null,
+  )
   if (ack?.ok) refresh(ack.targets)
+  else showState("Couldn't add the current tab.")
 })
 
 searchEl.addEventListener("input", render)
 
+const showWarning = () => {
+  viewList.hidden = true
+  viewWarning.hidden = false
+}
+
 const load = async () => {
   const status = await send({ type: "status" }).catch(() => null)
   if (!status?.connected) {
-    showState("Native host not connected. Run ‘foxhop install’.")
-    addEl.disabled = true
+    showWarning()
     return
   }
   tabFavicons = await buildTabFavicons()
   const ack = await send({ type: "targets" }).catch(() => null)
   if (!ack?.ok) {
-    showState("Couldn’t reach the foxhop host.")
+    showWarning()
     return
   }
   refresh(ack.targets ?? [])

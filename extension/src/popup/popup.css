@@ -234,6 +234,17 @@ body {
   text-align: center;
   color: var(--faint);
   font-size: 13px;
+  line-height: 1.6;
+}
+
+.state code {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  background: var(--hover);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: var(--fg);
 }
 
 .editor {
