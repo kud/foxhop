@@ -16,7 +16,7 @@ jobs:
       - run: npm install -g npm@latest
       - run: npm ci
       - name: Sign & upload the listed AMO version
-        run: npm run sign:listed -w webextension
+        run: npm run sign:listed -w webext
         env:
           WEB_EXT_API_KEY: ${{ secrets.MOZILLA_ADDONS_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.MOZILLA_ADDONS_JWT_SECRET }}

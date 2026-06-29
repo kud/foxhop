@@ -3,8 +3,8 @@
 # foxhop extension release — version bump for the Firefox extension surface.
 #
 # Mirrors bin/release.sh (the CLI line). npm is the version authority: we bump
-# webextension/package.json via `npm version -w webextension`, then sync that version
-# into webextension/manifest.json (the value AMO actually reads). We commit, tag
+# webext/package.json via `npm version -w webext`, then sync that version
+# into webext/manifest.json (the value AMO actually reads). We commit, tag
 # `webext-v<ver>` at the repo root, and push — which fires
 # .github/workflows/release-webext.yml to sign + upload the listed AMO version.
 #
@@ -42,12 +42,12 @@ fi
 # Bump the extension workspace, then mirror the version into the manifest. The
 # perl edit targets only the top-level "version" line (not "manifest_version"),
 # preserving the file's formatting.
-npm version "$BUMP" --no-git-tag-version -w webextension >/dev/null
-VERSION=$(node -p "require('./webextension/package.json').version")
-perl -i -pe 's/^(\s*"version":\s*")[^"]+(")/${1}'"$VERSION"'${2}/' webextension/manifest.json
+npm version "$BUMP" --no-git-tag-version -w webext >/dev/null
+VERSION=$(node -p "require('./webext/package.json').version")
+perl -i -pe 's/^(\s*"version":\s*")[^"]+(")/${1}'"$VERSION"'${2}/' webext/manifest.json
 TAG="webext-v${VERSION}"
 
-git add webextension/package.json webextension/manifest.json package-lock.json
+git add webext/package.json webext/manifest.json package-lock.json
 git commit -m "🏷️ release(webext): v${VERSION}"
 git tag -a "$TAG" -m "$TAG"
 
