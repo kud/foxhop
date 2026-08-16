@@ -3,9 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="../vendor/tokens.css" />
+    <link rel="stylesheet" href="../vendor/webext-ui.css" />
     <link rel="stylesheet" href="popup.css" />
   </head>
-  <body>
+  <body class="popup-wide">
     <header class="header">
       <h1 class="title">Fox Hop</h1>
       <a
@@ -28,7 +31,7 @@
 
     <!-- List view -->
     <div id="view-list">
-      <button class="action" id="add-current" type="button">
+      <button class="row-bleed action" id="add-current" type="button">
         <span class="action-icon" aria-hidden="true">+</span>
         <span class="action-label">Add current tab&hellip;</span>
       </button>
@@ -72,7 +75,7 @@
       </label>
       <div class="editor-actions">
         <button type="button" class="btn" id="editor-cancel">Cancel</button>
-        <button type="submit" class="btn primary">Save</button>
+        <button type="submit" class="btn btn-primary">Save</button>
       </div>
     </form>
 

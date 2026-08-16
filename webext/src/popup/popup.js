@@ -23,8 +23,20 @@ const showState = (text) => {
   listEl.hidden = true
 }
 
-// Deterministic hue per target so each monogram is distinct yet stable, and
-// legible on both light and dark backgrounds.
+// Deterministic hue per target so each monogram is distinct yet stable.
+//
+// MONOGRAM_LIGHTNESS is the part that matters and it is not a taste choice:
+// the label is white, and white over hsl(h 60% 45%) fell to 2.12:1 at yellow.
+// Sweeping the whole hue circle, 30% is the highest lightness at which white
+// clears 4.5:1 at *every* hue (worst case 4.51:1, at hue 60). Raise it and the
+// yellows and greens silently fail again.
+//
+// Picking the text colour per hue instead — white on dark hues, ink on light
+// ones — looks like the cleverer fix and does not work: at the crossover hue
+// neither colour is far enough from the background, and the best achievable
+// worst case is 4.16:1. It was measured, not assumed.
+const MONOGRAM_LIGHTNESS = 30
+
 const hueFor = (key) => {
   let hash = 0
   for (const char of key) hash = (hash * 31 + char.charCodeAt(0)) % 360
@@ -70,7 +82,7 @@ const iconFor = (target) => {
   }
   const monogram = document.createElement("span")
   monogram.className = "monogram"
-  monogram.style.background = `hsl(${hueFor(target.name)} 60% 45%)`
+  monogram.style.background = `hsl(${hueFor(target.name)} 60% ${MONOGRAM_LIGHTNESS}%)`
   monogram.textContent = (target.title ?? target.name).slice(0, 1)
   return monogram
 }
@@ -78,7 +90,10 @@ const iconFor = (target) => {
 const rowButton = (cls, glyph, label, onClick) => {
   const el = document.createElement("button")
   el.type = "button"
-  el.className = `row-btn ${cls}`
+  // reveal-on-hover shows these on hover *and* on keyboard focus. They used to
+  // be opacity: 0 with no focus rule, so tabbing moved through three invisible
+  // buttons.
+  el.className = `btn-icon reveal-on-hover ${cls}`
   el.textContent = glyph
   el.setAttribute("aria-label", label)
   el.addEventListener("click", (event) => {
@@ -90,7 +105,14 @@ const rowButton = (cls, glyph, label, onClick) => {
 
 const renderRow = (target) => {
   const row = document.createElement("li")
-  row.className = "row"
+  row.className = "row-bleed"
+
+  // The row's primary action is a real button rather than a click listener on
+  // the <li>. A bare list item is not in the tab order, so the main action of
+  // the most developed popup here could not be reached by keyboard at all.
+  const main = document.createElement("button")
+  main.type = "button"
+  main.className = "row-main"
 
   const text = document.createElement("span")
   text.className = "row-text"
@@ -103,7 +125,7 @@ const renderRow = (target) => {
   text.append(name, match)
 
   const fav = rowButton(
-    target.favorite ? "fav on" : "fav",
+    target.favorite ? "fav is-on" : "fav",
     target.favorite ? "★" : "☆",
     "Toggle favourite",
     async () => {
@@ -117,8 +139,9 @@ const renderRow = (target) => {
     if (ack?.ok) refresh(ack.targets)
   })
 
-  row.append(iconFor(target), text, fav, edit, remove)
-  row.addEventListener("click", () => focus(target))
+  main.append(iconFor(target), text)
+  main.addEventListener("click", () => focus(target))
+  row.append(main, fav, edit, remove)
   return row
 }
 

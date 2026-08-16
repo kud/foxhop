@@ -1,69 +1,35 @@
-:root {
-  --bg: #ffffff;
-  --fg: #1c1b22;
-  --muted: #5b5b66;
-  --faint: #8f8f9d;
-  --border: #ededf0;
-  --hover: #f5f5f7;
-  --accent: #f0560e;
-  --danger: #d70022;
-  color-scheme: light dark;
-}
+/* Fox Hop — popup identity.
+ *
+ * Everything shared lives in the vendored design system at src/vendor/
+ * (@kud/webext-ui). Re-sync with:
+ *   npx @kud/webext-ui@latest sync src/vendor/
+ *
+ * This is the full-bleed archetype: 360px wide, no body padding, edge-to-edge
+ * rows. The compact popups (gmeet, notionish, smoothgpt) use the narrow one.
+ *
+ * There is no colour override here — this extension's orange is the design
+ * system's default accent.
+ */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1c1b22;
-    --fg: #fbfbfe;
-    --muted: #b1b1bd;
-    --faint: #8f8f9d;
-    --border: #2b2a33;
-    --hover: #2b2a33;
-    --accent: #ff9a3d;
-    --danger: #ff6b6b;
-  }
-}
-
-* {
-  box-sizing: border-box;
-}
-
-/* `display: flex` on .editor would otherwise beat the UA [hidden] rule,
-   showing the editor on open. Make the hidden attribute authoritative. */
-[hidden] {
-  display: none !important;
-}
-
-body {
-  width: 360px;
-  margin: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font:
-    14px/1.4 system-ui,
-    -apple-system,
-    "Segoe UI",
-    sans-serif;
-}
+/* ── header ─────────────────────────────────────────────────────────────── */
 
 .header {
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 14px 16px;
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
 }
 
-.title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
+.header .title {
+  font-size: var(--text-lg);
 }
 
 .info {
   position: absolute;
-  right: 14px;
-  color: var(--faint);
+  right: var(--space-3);
+  color: var(--muted);
   text-decoration: none;
   font-size: 16px;
 }
@@ -72,25 +38,15 @@ body {
   color: var(--fg);
 }
 
+/* ── the "add current tab" action ───────────────────────────────────────── */
+
 .action {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 16px;
-  border: none;
   border-bottom: 1px solid var(--border);
-  background: transparent;
-  color: var(--fg);
-  font: inherit;
-  text-align: left;
   cursor: pointer;
 }
 
-.action:hover {
-  background: var(--hover);
-}
-
+/* 20px at weight 600 is non-text under WCAG, so the accent clears the 3:1 bar
+   it answers to (3.48:1). Accent as small text would not — see .badge. */
 .action-icon {
   flex: 0 0 24px;
   height: 24px;
@@ -106,65 +62,31 @@ body {
   flex: 1;
 }
 
-.section {
-  padding: 12px 16px 6px;
-}
+/* ── list chrome ────────────────────────────────────────────────────────── */
 
-.section-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
+.section {
+  padding: var(--space-3) var(--space-4) var(--space-1);
 }
 
 .search {
-  padding: 0 16px 8px;
+  padding: 0 var(--space-4) var(--space-2);
 }
 
-#search {
-  width: 100%;
-  padding: 7px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
-  color: var(--fg);
-  font: inherit;
-}
+/* ── row icons ──────────────────────────────────────────────────────────── */
 
-#search:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.list {
-  list-style: none;
-  margin: 0;
-  padding: 0 0 8px;
-  max-height: 340px;
-  overflow-y: auto;
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  cursor: pointer;
-}
-
-.row:hover {
-  background: var(--hover);
-}
-
+/* The background is set inline by popup.js from a hue generated per target.
+   White is safe against every hue in that range only because the generated
+   lightness is capped — see hueFor/monogram in popup.js. */
 .monogram {
   flex: 0 0 24px;
   width: 24px;
   height: 24px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   background: var(--accent);
   color: #fff;
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 600;
   text-transform: uppercase;
 }
@@ -173,151 +95,35 @@ body {
   flex: 0 0 24px;
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   object-fit: contain;
 }
 
-.row-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.row-name {
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.row-match {
-  font-size: 12px;
-  color: var(--faint);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.row-btn {
-  flex: 0 0 auto;
-  border: none;
-  background: transparent;
-  color: var(--faint);
-  font-size: 14px;
-  line-height: 1;
-  padding: 4px;
-  border-radius: 4px;
-  cursor: pointer;
-  opacity: 0;
-}
-
-.row:hover .row-btn,
-.row-btn.on {
-  opacity: 1;
-}
-
-.row-btn:hover {
-  background: var(--border);
-  color: var(--fg);
-}
-
-.row-btn.fav.on {
+.fav.is-on {
   color: var(--accent);
 }
 
-.row-btn.remove:hover {
+.remove:hover {
   color: var(--danger);
 }
 
-.state {
-  margin: 0;
-  padding: 24px 16px;
-  text-align: center;
-  color: var(--faint);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.state code {
-  font-family: ui-monospace, monospace;
-  font-size: 12px;
-  background: var(--hover);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 1px 5px;
-  color: var(--fg);
-}
+/* ── editor ─────────────────────────────────────────────────────────────── */
 
 .editor {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px 16px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
 .editor-name {
-  font-size: 15px;
+  font-size: var(--text-lg);
   font-weight: 600;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.field input,
-.field select {
-  padding: 7px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
-  color: var(--fg);
-  font:
-    14px/1.4 system-ui,
-    sans-serif;
-}
-
-.field input:focus,
-.field select:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.field-row {
-  display: flex;
-  gap: 10px;
 }
 
 .editor-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.btn {
-  padding: 7px 14px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
-  color: var(--fg);
-  font: inherit;
-  cursor: pointer;
-}
-
-.btn:hover {
-  background: var(--hover);
-}
-
-.btn.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-
-.btn.primary:hover {
-  filter: brightness(1.05);
+  gap: var(--space-2);
+  margin-top: var(--space-1);
 }
