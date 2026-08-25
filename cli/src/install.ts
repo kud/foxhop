@@ -7,23 +7,39 @@ import {
   MANIFEST_DIR,
   MANIFEST_PATH,
 } from "./constants.js"
+import { CONFIG_DIR } from "./config.js"
 
-export const install = () => {
-  const distDir = dirname(fileURLToPath(import.meta.url))
+// Firefox launches native messaging hosts with a minimal GUI PATH
+// (/usr/bin:/bin:/usr/sbin:/sbin) that excludes version-managed node
+// (mise/nvm/asdf) and Homebrew. A `#!/usr/bin/env node` shebang therefore fails
+// under a Dock launch, so the manifest points at a wrapper carrying an absolute
+// node path instead.
+//
+// That wrapper has to survive two expiries, both of which unhook the extension
+// silently — the manifest still exists, it just names a path that stopped
+// working:
+//   · it must not live in the package's own dist/. It is generated, so it is
+//     absent from the published tarball, and npm replaces dist/ wholesale on
+//     every version bump — the wrapper would vanish on each upgrade.
+//   · the node path captured at install time is version-scoped under mise, so a
+//     runtime bump strands it. Fall through to the version-agnostic shim, which
+//     resolves at launch and works under the minimal GUI PATH.
+export const wrapperScript = (nodePath: string, hostEntry: string) => `#!/bin/sh
+node_bin=${JSON.stringify(nodePath)}
+[ -x "$node_bin" ] || node_bin="$HOME/.local/share/mise/shims/node"
+[ -x "$node_bin" ] || node_bin=node
+exec "$node_bin" ${JSON.stringify(hostEntry)} "$@"
+`
+
+export const install = (
+  distDir = dirname(fileURLToPath(import.meta.url)),
+): void => {
   const hostEntry = join(distDir, "host-cli.js")
   chmodSync(hostEntry, 0o755)
 
-  // Firefox launches native messaging hosts with a minimal GUI PATH
-  // (/usr/bin:/bin:/usr/sbin:/sbin) that excludes version-managed node
-  // (mise/nvm/asdf) and Homebrew. A `#!/usr/bin/env node` shebang therefore
-  // fails under a Dock launch. Point the manifest at a wrapper that hard-codes
-  // the absolute node path captured at install time, so the host launches the
-  // same way regardless of how Firefox was started.
-  const wrapperPath = join(distDir, "host-launch.sh")
-  writeFileSync(
-    wrapperPath,
-    `#!/bin/sh\nexec ${JSON.stringify(process.execPath)} ${JSON.stringify(hostEntry)} "$@"\n`,
-  )
+  mkdirSync(CONFIG_DIR, { recursive: true })
+  const wrapperPath = join(CONFIG_DIR, "host-launch.sh")
+  writeFileSync(wrapperPath, wrapperScript(process.execPath, hostEntry))
   chmodSync(wrapperPath, 0o755)
 
   mkdirSync(MANIFEST_DIR, { recursive: true })
