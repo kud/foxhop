@@ -4,6 +4,14 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
+## Unreleased
+
+### Fixes
+
+- **`foxhop install` no longer needs re-running after every upgrade.** The native-messaging manifest pointed at a launcher script generated inside the npm package's own `dist/`, which isn't part of the published tarball — so every version bump wiped `dist/` and took the launcher with it, leaving Firefox silently unable to reach the host until you re-ran `install`. The launcher now lives in `~/.config/foxhop/`, alongside foxhop's other generated files, where npm updates can't touch it. It also now falls back to mise's version-agnostic node shim if the interpreter path captured at install time has since moved (e.g. after a node upgrade), so it survives runtime bumps as well as package bumps. ([9cda864](https://github.com/kud/foxhop/commit/9cda864e29b466293714ff7044d05c317a120625))
+
+---
+
 ## [1.2.1] — 2026-06-27
 
 ### Fixes
