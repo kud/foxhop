@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      - run: npm install -g npm@latest
+      - run: npm install -g npm@11
       - run: npm ci
       - run: npm run build -w cli
       - run: npm run typecheck -w cli
@@ -30,6 +30,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install -g npm@latest
+      - run: npm install -g npm@11
       - run: npm ci
       - run: npm run lint -w webext
