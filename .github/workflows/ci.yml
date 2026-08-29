@@ -9,6 +9,7 @@ jobs:
   cli:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         node: [20, 22]
     steps:
@@ -16,9 +17,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      # Drop the macOS-generated lockfile so npm resolves rollup's Linux-only
-      # optional dep fresh on the runner (npm/cli#4828).
-      - run: rm -f package-lock.json && npm install
+      - run: npm install -g npm@latest
+      - run: npm ci
       - run: npm run build -w cli
       - run: npm run typecheck -w cli
       - run: npm run test -w cli
@@ -30,5 +30,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+      - run: npm install -g npm@latest
+      - run: npm ci
       - run: npm run lint -w webext
