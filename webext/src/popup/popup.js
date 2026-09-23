@@ -10,6 +10,7 @@ const editorCancel = document.getElementById("editor-cancel")
 const fTitle = document.getElementById("f-title")
 const fMatch = document.getElementById("f-match")
 const fUrl = document.getElementById("f-url")
+const fNavigate = document.getElementById("f-navigate")
 
 let targets = []
 let tabFavicons = {}
@@ -178,6 +179,7 @@ const openEditor = (target) => {
   fUrl.value = target.url ?? ""
   fTitle.value = target.title ?? ""
   fMatch.value = target.match ?? ""
+  fNavigate.checked = Boolean(target.navigate)
   viewList.hidden = true
   editor.hidden = false
 }
@@ -195,6 +197,7 @@ editor.addEventListener("submit", async (event) => {
     url: fUrl.value.trim() || undefined,
     title: fTitle.value.trim() || undefined,
     match: fMatch.value.trim(),
+    navigate: fNavigate.checked || undefined,
   }
   const ack = await send({ type: "upsert", target: next })
   if (ack?.ok) {

@@ -42,31 +42,71 @@ const focusWindow = async (windowId) => {
   })
 }
 
+const normaliseUrl = (url) => {
+  try {
+    const parsed = new URL(url)
+    return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : null
+  } catch {
+    return null
+  }
+}
+
+// The scope guard: a target may only navigate to a URL its own match would
+// select, so a ChatGPT target can never repoint an unrelated tab.
+const isInScope = (url, match, strategy) => matchesTab({ url }, match, strategy)
+
+// `navigateTo` is deliberately not the saved `navigate` flag: the popup sends
+// the whole saved target into focusTab(), so keying navigation off the config
+// field would make a popup click navigate an opted-in target's tab.
 const focusTab = async ({
   match,
   strategy = "hostname",
   pick = "recent",
   url,
+  navigateTo,
 }) => {
+  const destination = navigateTo ? normaliseUrl(navigateTo) : null
+  if (
+    navigateTo &&
+    (!destination || !isInScope(destination, match, strategy))
+  ) {
+    return {
+      ok: false,
+      error: `url out of scope for this target: ${navigateTo}`,
+    }
+  }
+
   const tabs = await browser.tabs.query({})
   const matches = tabs.filter((tab) => matchesTab(tab, match, strategy))
 
   if (matches.length) {
     const tab = chooseTab(matches, pick)
-    await browser.tabs.update(tab.id, { active: true })
+    const navigated =
+      Boolean(destination) && normaliseUrl(tab.url) !== destination
+    await browser.tabs.update(tab.id, {
+      active: true,
+      ...(navigated ? { url: destination } : {}),
+    })
     await focusWindow(tab.windowId)
     return {
-      action: "focused",
+      action: navigated ? "navigated" : "focused",
+      ...(destination ? { navigated } : {}),
       tabId: tab.id,
       windowId: tab.windowId,
       matchCount: matches.length,
     }
   }
 
-  if (url) {
-    const created = await browser.tabs.create({ url })
+  const openUrl = destination ?? url
+  if (openUrl) {
+    const created = await browser.tabs.create({ url: openUrl })
     await focusWindow(created.windowId)
-    return { action: "opened", tabId: created.id, windowId: created.windowId }
+    return {
+      action: "opened",
+      ...(destination ? { navigated: false } : {}),
+      tabId: created.id,
+      windowId: created.windowId,
+    }
   }
 
   return { action: "not-found" }

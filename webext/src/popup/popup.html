@@ -73,6 +73,14 @@
         <span>Match</span>
         <input id="f-match" type="text" autocomplete="off" spellcheck="false" />
       </label>
+      <label class="field-inline">
+        <input id="f-navigate" type="checkbox" />
+        <span>Navigate the matching tab to a requested URL</span>
+      </label>
+      <p class="field-note">
+        With <code>foxhop focus &lt;name&gt; --url &lt;url&gt;</code>, reuse the
+        existing tab instead of opening another. The URL must fall within Match.
+      </p>
       <div class="editor-actions">
         <button type="button" class="btn" id="editor-cancel">Cancel</button>
         <button type="submit" class="btn btn-primary">Save</button>

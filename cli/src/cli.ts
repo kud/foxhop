@@ -58,7 +58,11 @@ const focus = defineCommand({
       type: "string",
       description: "Ad-hoc substring to match against tab URLs",
     },
-    url: { type: "string", description: "URL to open when no tab matches" },
+    url: {
+      type: "string",
+      description:
+        "URL to open when no tab matches — or, for a target with `navigate: true`, the URL to repoint its matching tab to",
+    },
     strategy: {
       type: "string",
       description: "hostname | prefix | exact | search",
@@ -77,7 +81,7 @@ const focus = defineCommand({
           strategy: args.strategy ?? "hostname",
           pick: args.pick ?? "recent",
         }
-      : resolveNamed(String(args.name ?? ""))
+      : resolveNamed(String(args.name ?? ""), args.url)
 
     if (!request) {
       console.error(
@@ -90,8 +94,18 @@ const focus = defineCommand({
 
     try {
       const ack = await sendToHost(request)
-      if (ack?.ok && ack.action !== "not-found") foreground()
-      else
+      if (ack?.ok && ack.action !== "not-found") {
+        foreground()
+        // An extension predating navigation ignores navigateTo and just
+        // focuses — the user asked for a specific page, so say so.
+        if ("navigateTo" in request && ack.navigated === undefined) {
+          console.error(
+            fail(
+              "the foxhop extension is too old to navigate tabs — update it; the tab was only focused",
+            ),
+          )
+        }
+      } else
         console.error(fail(ack?.error ?? "no matching tab and no url to open"))
     } catch (error) {
       const code = (error as NodeJS.ErrnoException)?.code
@@ -127,15 +141,19 @@ const focus = defineCommand({
   },
 })
 
-const resolveNamed = (name: string) => {
+// A named target given --url navigates its matching tab there only when the
+// target opts in (`navigate: true`); otherwise --url just replaces the
+// fallback-open URL, so existing tabs are never silently repointed.
+const resolveNamed = (name: string, url?: string) => {
   const target = findTarget(readConfig(), name)
   if (!target) return null
   return {
     op: "focus",
     match: target.match,
-    url: target.url,
+    url: url ?? target.url,
     strategy: target.strategy ?? "hostname",
     pick: target.pick ?? "recent",
+    ...(url && target.navigate ? { navigateTo: url } : {}),
   }
 }
 
@@ -297,6 +315,11 @@ const add = defineCommand({
       description: "recent | first | pinned (which tab when several match)",
     },
     favorite: { type: "boolean", description: "Pin to the top of the list" },
+    navigate: {
+      type: "boolean",
+      description:
+        "Let `focus <name> --url` repoint the matching tab (--no-navigate to turn off)",
+    },
   },
   run: ({ args }) => {
     const url = args.url ? String(args.url) : undefined
@@ -321,6 +344,7 @@ const add = defineCommand({
       strategy: args.strategy as Strategy | undefined,
       pick: args.pick as Pick | undefined,
       favorite: args.favorite || existing?.favorite ? true : undefined,
+      navigate: (args.navigate ?? existing?.navigate) ? true : undefined,
     })
     console.log(ok(`saved ${bold(name)}`))
     autoSync()

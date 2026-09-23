@@ -12,6 +12,7 @@ export interface Target {
   url?: string
   strategy?: Strategy
   pick?: Pick
+  navigate?: boolean
   favorite?: boolean
 }
 
@@ -67,6 +68,12 @@ const SCHEMA = {
             enum: ["recent", "first", "pinned"],
             default: "recent",
             description: "Which tab to focus when several match",
+          },
+          navigate: {
+            type: "boolean",
+            default: false,
+            description:
+              "Let `foxhop focus <name> --url <url>` repoint the matching tab to that URL instead of only focusing it. The URL must fall within this target's match.",
           },
           favorite: {
             type: "boolean",
