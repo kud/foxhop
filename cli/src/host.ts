@@ -4,6 +4,7 @@ import { encodeMessage, createMessageReader } from "./framing.js"
 import { SOCKET_PATH, REQUEST_TIMEOUT_MS } from "./constants.js"
 import {
   readConfig,
+  findTarget,
   upsertTarget,
   removeTarget,
   toggleFavorite,
@@ -43,9 +44,13 @@ export const runHost = () => {
         case "config:add": {
           if (!request.url) return reply({ ok: false, error: "missing url" })
           const derived = deriveTarget(request.url)
+          // Re-adding a tab whose target already exists must refresh its URL and
+          // title without wiping the settings only the user can set.
+          const existing = findTarget(readConfig(), derived.name)
           const { targets } = upsertTarget({
+            ...existing,
             name: derived.name,
-            match: derived.match,
+            match: existing?.match ?? derived.match,
             title: request.title || derived.title,
             url: request.url,
           })

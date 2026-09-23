@@ -4,6 +4,26 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
+## Unreleased
+
+### Highlights
+
+- **`foxhop focus <name> --url <url>` can now repoint a matching tab instead of only focusing it.** Opt a target in with `navigate: true` (or `foxhop add --navigate`/`--no-navigate`), and a `--url` that falls within that target's own match will send the existing tab there rather than merely bringing it forward — the URL must be http(s) and in scope, or nothing is touched. The popup's target editor gained a matching checkbox, though a popup click never navigates on its own, and the CLI warns if the installed extension predates navigation support (needs v1.1.0+). Resolves [#2 — repoint an already-open tab to a new URL](https://github.com/kud/foxhop/issues/2). ([8fdec8c](https://github.com/kud/foxhop/commit/8fdec8c4c531852c1c1e5aabc642790731718821))
+- On a target **without** `navigate` enabled, `focus <name> --url <url>` now uses that URL as the open-if-missing fallback when no matching tab exists — previously it was silently ignored in that case. ([8fdec8c](https://github.com/kud/foxhop/commit/8fdec8c4c531852c1c1e5aabc642790731718821))
+
+### Fixes
+
+- **Re-saving a target no longer wipes the settings you didn't touch.** The extension's "Add current tab" rebuilt an existing target from scratch, dropping its favourite star, `navigate`, `strategy` and `pick`; it now refreshes only the URL and title. Likewise, `foxhop add` on an existing target keeps its `strategy` and `pick` unless you pass new ones.
+
+<details>
+<summary>Internal (2 commits)</summary>
+
+- CI now pins npm to a fixed major version and installs from the committed lockfile via `npm ci` instead of regenerating it, avoiding unpredictable npm-version and rollup-optional-dependency breakage.
+
+</details>
+
+---
+
 ## [1.2.5] — 2026-08-25
 
 ### Fixes

@@ -333,16 +333,16 @@ const add = defineCommand({
     }
     const derived = deriveTarget(source)
     const name = args.name ?? derived.name
-    // Preserve an existing target's favourite — editing must not clear the star
-    // (favourite is toggled from the list, not this form).
+    // Editing an existing target keeps whatever the flags leave unsaid — the star
+    // (toggled from the list, not here), strategy, pick and navigate.
     const existing = findTarget(readConfig(), name)
     upsertTarget({
       name,
       match: matchArg ?? derived.match,
       url,
       title: args.title ?? derived.title,
-      strategy: args.strategy as Strategy | undefined,
-      pick: args.pick as Pick | undefined,
+      strategy: (args.strategy as Strategy | undefined) ?? existing?.strategy,
+      pick: (args.pick as Pick | undefined) ?? existing?.pick,
       favorite: args.favorite || existing?.favorite ? true : undefined,
       navigate: (args.navigate ?? existing?.navigate) ? true : undefined,
     })
