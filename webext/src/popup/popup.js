@@ -134,6 +134,7 @@ const renderRow = (target) => {
       if (ack?.ok) refresh(ack.targets)
     },
   )
+  fav.setAttribute("aria-pressed", String(Boolean(target.favorite)))
   const edit = rowButton("edit", "✎", "Edit target", () => openEditor(target))
   const remove = rowButton("remove", "×", "Delete target", async () => {
     const ack = await send({ type: "remove", name: target.name })
