@@ -42,7 +42,6 @@
 
 .action {
   border-bottom: 1px solid var(--border);
-  cursor: pointer;
 }
 
 /* 20px at weight 600 is non-text under WCAG, so the accent clears the 3:1 bar
