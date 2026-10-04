@@ -9,6 +9,8 @@ import {
   removeTarget,
   toggleFavorite,
   deriveTarget,
+  allocateTargetName,
+  slugify,
   CONFIG_PATH,
   type Strategy,
   type Pick,
@@ -16,7 +18,7 @@ import {
 import { sendToHost } from "./client.js"
 import { SOCKET_PATH } from "./constants.js"
 import { install } from "./install.js"
-import { sync, clearScripts, defaultScriptsDir } from "./sync.js"
+import { sync, clearScripts, autoSync, defaultScriptsDir } from "./sync.js"
 import { fileURLToPath } from "node:url"
 import { bold, dim, cyan, yellow, ok, fail } from "./ui.js"
 
@@ -33,15 +35,6 @@ const runOpen = (args: string[]) => {
 }
 const foreground = () => runOpen(["-a", browserApp()])
 const openUrl = (url: string) => runOpen([url])
-
-// Keep the generated hotkey scripts mirrored to the targets after a mutation —
-// but only once the user has opted in by generating them at least once (the
-// scripts dir exists). No opt-in → nothing is created, so there's no clutter.
-const autoSync = () => {
-  if (existsSync(defaultScriptsDir())) {
-    sync(process.execPath, fileURLToPath(import.meta.url))
-  }
-}
 
 const focus = defineCommand({
   meta: {
@@ -332,22 +325,29 @@ const add = defineCommand({
       process.exit(1)
     }
     const derived = deriveTarget(source)
-    const name = args.name ?? derived.name
+    const match = matchArg ?? derived.match
+    const title = args.title ?? derived.title
+    // The id is the slug of the title (or of --name when given). Never
+    // overwrite a different target: a taken id whose match differs gets a
+    // -2, -3, … suffix instead.
+    const { targets } = readConfig()
+    const base = slugify(args.name ?? title) || slugify(match) || derived.name
+    const name = allocateTargetName(targets, base, match)
     // Editing an existing target keeps whatever the flags leave unsaid — the star
     // (toggled from the list, not here), strategy, pick and navigate.
-    const existing = findTarget(readConfig(), name)
+    const existing = findTarget({ targets }, name)
     upsertTarget({
       name,
-      match: matchArg ?? derived.match,
+      match,
       url,
-      title: args.title ?? derived.title,
+      title,
       strategy: (args.strategy as Strategy | undefined) ?? existing?.strategy,
       pick: (args.pick as Pick | undefined) ?? existing?.pick,
       favorite: args.favorite || existing?.favorite ? true : undefined,
       navigate: (args.navigate ?? existing?.navigate) ? true : undefined,
     })
     console.log(ok(`saved ${bold(name)}`))
-    autoSync()
+    autoSync(process.execPath, fileURLToPath(import.meta.url))
   },
 })
 
@@ -367,7 +367,7 @@ const remove = defineCommand({
       process.exit(1)
     }
     console.log(ok(`removed ${bold(String(args.name))}`))
-    autoSync()
+    autoSync(process.execPath, fileURLToPath(import.meta.url))
   },
 })
 

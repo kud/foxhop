@@ -1,5 +1,6 @@
 import net from "node:net"
 import { existsSync, unlinkSync } from "node:fs"
+import { fileURLToPath } from "node:url"
 import { encodeMessage, createMessageReader } from "./framing.js"
 import { SOCKET_PATH, REQUEST_TIMEOUT_MS } from "./constants.js"
 import {
@@ -9,10 +10,69 @@ import {
   removeTarget,
   toggleFavorite,
   deriveTarget,
+  allocateTargetName,
+  slugify,
+  cliEntryForScripts,
   type Target,
 } from "./config.js"
+import { autoSync } from "./sync.js"
 
 type Ack = { reqId: number; ok: boolean; action?: string; error?: string }
+
+// Applies a popup-initiated config mutation against tabs.json and returns the
+// reply payload (the resulting targets list so the popup can re-render).
+// Exported for tests; runHost wraps it with the native-messaging transport.
+export const handleConfigMutation = (request: ConfigRequest) => {
+  const resync = () =>
+    autoSync(
+      process.execPath,
+      cliEntryForScripts(fileURLToPath(import.meta.url)),
+    )
+  switch (request.op) {
+    case "config:read":
+      return { ok: true, targets: readConfig().targets }
+    case "config:add": {
+      if (!request.url) return { ok: false, error: "missing url" }
+      const derived = deriveTarget(request.url)
+      // The id is the slug of the popup's title (or the derived one) — the
+      // popup never sends a name. Re-adding the same site refreshes its URL
+      // without wiping user-set fields; a taken id with a different match
+      // gets a -2, -3, … suffix instead of overwriting.
+      const title = request.title || derived.title
+      const { targets: current } = readConfig()
+      const base = slugify(title) || slugify(derived.match) || derived.name
+      const name = allocateTargetName(current, base, derived.match)
+      const existing = findTarget({ targets: current }, name)
+      const { targets } = upsertTarget({
+        ...existing,
+        name,
+        match: existing?.match ?? derived.match,
+        title,
+        url: request.url,
+      })
+      resync()
+      return { ok: true, targets }
+    }
+    case "config:upsert": {
+      if (!request.target) return { ok: false, error: "missing target" }
+      const result = { ok: true, targets: upsertTarget(request.target).targets }
+      resync()
+      return result
+    }
+    case "config:remove": {
+      const result = removeTarget(request.name ?? "")
+      if (result.removed) resync()
+      return { ok: true, targets: result.targets }
+    }
+    case "config:favorite": {
+      const { found } = toggleFavorite(request.name ?? "")
+      if (found) resync()
+      return { ok: true, targets: readConfig().targets }
+    }
+    default:
+      return { ok: false, error: `unknown op: ${request.op}` }
+  }
+}
 
 // Requests the extension's popup sends *up* to the host (the only component with
 // filesystem access to tabs.json). Distinguished from acks by their `config:` op.
@@ -34,47 +94,12 @@ export const runHost = () => {
 
   // Serve a config request from the extension popup against tabs.json, then
   // reply with the resulting targets list so the popup can re-render.
+  // Mutations resync the generated scripts exactly like the CLI does.
   const handleConfigRequest = (request: ConfigRequest) => {
     const reply = (extra: object) =>
       sendToExtension({ cfgId: request.cfgId, ...extra })
     try {
-      switch (request.op) {
-        case "config:read":
-          return reply({ ok: true, targets: readConfig().targets })
-        case "config:add": {
-          if (!request.url) return reply({ ok: false, error: "missing url" })
-          const derived = deriveTarget(request.url)
-          // Re-adding a tab whose target already exists must refresh its URL and
-          // title without wiping the settings only the user can set.
-          const existing = findTarget(readConfig(), derived.name)
-          const { targets } = upsertTarget({
-            ...existing,
-            name: derived.name,
-            match: existing?.match ?? derived.match,
-            title: request.title || derived.title,
-            url: request.url,
-          })
-          return reply({ ok: true, targets })
-        }
-        case "config:upsert": {
-          if (!request.target)
-            return reply({ ok: false, error: "missing target" })
-          return reply({
-            ok: true,
-            targets: upsertTarget(request.target).targets,
-          })
-        }
-        case "config:remove":
-          return reply({
-            ok: true,
-            targets: removeTarget(request.name ?? "").targets,
-          })
-        case "config:favorite":
-          toggleFavorite(request.name ?? "")
-          return reply({ ok: true, targets: readConfig().targets })
-        default:
-          return reply({ ok: false, error: `unknown op: ${request.op}` })
-      }
+      return reply(handleConfigMutation(request))
     } catch (error) {
       reply({ ok: false, error: String(error) })
     }

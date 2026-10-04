@@ -16,6 +16,15 @@ const ICON_FILE = "foxhop.png"
 
 export const defaultScriptsDir = () => join(CONFIG_DIR, "scripts")
 
+// Keep the generated hotkey scripts mirrored to the targets after a mutation —
+// but only once the user has opted in by generating them at least once (the
+// scripts dir exists). No opt-in → nothing is created, so there's no clutter.
+export const autoSync = (node: string, cli: string) => {
+  if (existsSync(defaultScriptsDir())) {
+    sync(node, cli)
+  }
+}
+
 const stableNode = (node: string) => {
   const index = node.indexOf("/installs/node/")
   if (index === -1) return node

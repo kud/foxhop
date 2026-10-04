@@ -120,6 +120,11 @@
   font-weight: 600;
 }
 
+.editor-meta {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
 .editor-actions {
   display: flex;
   justify-content: flex-end;

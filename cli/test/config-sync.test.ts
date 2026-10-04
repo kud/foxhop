@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeAll } from "vitest"
-import { mkdtempSync, readdirSync, readFileSync } from "node:fs"
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
@@ -22,6 +28,7 @@ describe("config", () => {
   it("upserts and finds a target", () => {
     cfg.upsertTarget({
       name: "chatgpt",
+      title: "ChatGPT",
       match: "chatgpt.com",
       url: "https://chatgpt.com",
     })
@@ -31,7 +38,11 @@ describe("config", () => {
   })
 
   it("upsert replaces an existing target by name", () => {
-    cfg.upsertTarget({ name: "chatgpt", match: "chat.openai.com" })
+    cfg.upsertTarget({
+      name: "chatgpt",
+      title: "ChatGPT",
+      match: "chat.openai.com",
+    })
     const matches = cfg
       .readConfig()
       .targets.filter((target) => target.name === "chatgpt")
@@ -52,7 +63,7 @@ describe("sync", () => {
       title: "Todoist",
       match: "todoist.com",
     })
-    cfg.upsertTarget({ name: "gmail", match: "mail.google.com" })
+    cfg.upsertTarget({ name: "gmail", title: "Gmail", match: "mail.google.com" })
     const dir = join(configHome, "scripts")
 
     syncMod.sync("/usr/bin/node", "/opt/foxhop/cli.js", dir)
@@ -68,5 +79,22 @@ describe("sync", () => {
     cfg.removeTarget("gmail")
     syncMod.sync("/usr/bin/node", "/opt/foxhop/cli.js", dir)
     expect(scripts()).toEqual(["focus-todoist.sh"])
+  })
+
+  it("prunes stale scripts, including ones with dots in the name", () => {
+    const dir = join(configHome, "dot-scripts")
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(
+      join(dir, "focus-calendar.notion.so.sh"),
+      "#!/bin/bash\n# @foxhop.generated\n",
+    )
+
+    syncMod.sync("/usr/bin/node", "/opt/foxhop/cli.js", dir)
+    const scripts = () =>
+      readdirSync(dir)
+        .filter((file) => file.endsWith(".sh"))
+        .sort()
+    expect(scripts()).not.toContain("focus-calendar.notion.so.sh")
+    expect(scripts()).toContain("focus-todoist.sh")
   })
 })

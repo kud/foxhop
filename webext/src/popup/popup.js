@@ -6,6 +6,7 @@ const viewList = document.getElementById("view-list")
 const viewWarning = document.getElementById("view-warning")
 const editor = document.getElementById("editor")
 const editorName = document.getElementById("editor-name")
+const editorMeta = document.getElementById("editor-meta")
 const editorCancel = document.getElementById("editor-cancel")
 const fTitle = document.getElementById("f-title")
 const fMatch = document.getElementById("f-match")
@@ -173,10 +174,10 @@ const focus = async (target) => {
 
 const openEditor = (target) => {
   editing = target
-  editorName.textContent =
-    target.title && target.title !== target.name
-      ? `${target.title} (${target.name})`
-      : target.name
+  // The id is shown read-only: renaming would break `foxhop focus <name>`
+  // and the generated Raycast script, so the editor offers no name field.
+  editorName.textContent = target.title ?? target.name
+  editorMeta.textContent = `${target.name} · Raycast: focus-${target.name}`
   fUrl.value = target.url ?? ""
   fTitle.value = target.title ?? ""
   fMatch.value = target.match ?? ""
