@@ -1,0 +1,19 @@
+{
+  "name": {
+    "en-US": "Fox Hop"
+  },
+  "summary": {
+    "en-US": "Jump to a specific Firefox tab (ChatGPT, Todoist, …) from a global hotkey — via the companion foxhop CLI and Raycast."
+  },
+  "description": {
+    "en-US": "Fox Hop lets you jump straight to a specific Firefox tab — your ChatGPT, Todoist, email, a dashboard — from anywhere on macOS, with a global hotkey or the command line.\n\nFirefox can't be driven by AppleScript, so Fox Hop pairs with a small companion command-line tool, <strong>foxhop-cli</strong>, which talks to this extension over native messaging. You list the tabs you care about in a simple config file; a\nhotkey then activates the matching tab (and opens it if it isn't already open).\n\n<strong>This extension does nothing on its own</strong> — it needs the free, open-source foxhop CLI:\n• npm: <code>@kud/foxhop-cli</code>\n• Source & setup: <a href=\"https://github.com/kud/foxhop\" rel=\"nofollow\">https://github.com/kud/foxhop</a>\n\nFox Hop collects no data: it reads tab URLs/titles only locally to find the one you asked for, and communicates solely with the local companion app."
+  },
+  "homepage": null,
+  "support_url": {
+    "en-US": "https://github.com/kud/foxhop"
+  },
+  "categories": [
+    "tabs"
+  ],
+  "tags": []
+}

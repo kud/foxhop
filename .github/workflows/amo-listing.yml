@@ -1,0 +1,22 @@
+name: AMO listing
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Send the changes to AMO (off runs a dry run)"
+        type: boolean
+        default: false
+
+jobs:
+  amo-listing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - run: node bin/amo-listing.mjs --listing webext/amo/listing.json --guid foxhop@kud.io --icon assets/icons/foxhop-128.png --screenshots webext/amo/screenshots ${{ inputs.apply && '--apply' || '' }}
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.MOZILLA_ADDONS_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.MOZILLA_ADDONS_JWT_SECRET }}
