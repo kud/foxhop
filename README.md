@@ -1,9 +1,6 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/foxhop-logo-dark.svg" />
-  <img src="assets/brand/foxhop-logo.svg" width="360" alt="Fox Hop" />
-</picture>
+<img src="assets/brand/foxhop-banner.png" alt="Fox Hop: a red fox leaping across browser tabs to land on the one you want" />
 
 <br />
 <br />
