@@ -4,6 +4,14 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
+## Unreleased
+
+### Highlights
+
+- **New Fox Hop identity.** A redrawn leaping fox is the brand mark (README, app and store icons), and a fox face is the interface icon (Firefox toolbar, generated Raycast hotkey scripts). Every PNG and the favicon are rendered from the SVGs in `assets/brand/`.
+
+---
+
 ## [2.0.0] — 2026-10-04
 
 ### Highlights

@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="assets/icons/foxhop-256.png" width="120" alt="foxhop icon" />
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/foxhop-logo-dark.svg" />
+  <img src="assets/brand/foxhop-logo.svg" width="360" alt="Fox Hop" />
+</picture>
 
 <br />
 <br />
