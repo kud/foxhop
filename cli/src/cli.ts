@@ -8,12 +8,15 @@ import {
   upsertTarget,
   removeTarget,
   toggleFavorite,
+  editTarget,
   deriveTarget,
-  allocateTargetName,
-  slugify,
+  nameForAdd,
   CONFIG_PATH,
+  STRATEGIES,
+  PICKS,
   type Strategy,
   type Pick,
+  type TargetPatch,
 } from "./config.js"
 import { sendToHost } from "./client.js"
 import { SOCKET_PATH } from "./constants.js"
@@ -42,6 +45,19 @@ const openUrl = (url: string) => runOpen([url])
 // once the user has opted in by generating scripts at least once.
 const resync = () =>
   autoSync(process.execPath, fileURLToPath(import.meta.url))
+
+// Rejects an unknown --strategy / --pick instead of saving a value the
+// extension would silently treat as the default.
+const oneOf = <T extends string>(
+  flag: string,
+  value: unknown,
+  allowed: readonly T[],
+): T | undefined => {
+  if (value === undefined) return undefined
+  if (allowed.includes(value as T)) return value as T
+  console.error(fail(`--${flag} must be one of: ${allowed.join(" | ")}`))
+  process.exit(1)
+}
 
 const focus = defineCommand({
   meta: {
@@ -332,32 +348,93 @@ const add = defineCommand({
       console.error(fail("provide a URL or --match"))
       process.exit(1)
     }
+    const strategy = oneOf<Strategy>("strategy", args.strategy, STRATEGIES)
+    const pick = oneOf<Pick>("pick", args.pick, PICKS)
     const derived = deriveTarget(source)
     const match = matchArg ?? derived.match
-    const title = args.title ?? derived.title
-    // The id is the slug of the title (or of --name when given). Never
-    // overwrite a different target: a taken id whose match differs gets a
-    // -2, -3, … suffix instead.
+    // The id is the slug of the title (or of --name when given). Re-adding a
+    // site that is already saved updates it in place; a different target is
+    // never overwritten: a taken id whose match differs gets a -2, -3, … suffix.
     const { targets } = readConfig(resync)
-    const base = slugify(args.name ?? title) || slugify(match) || derived.name
-    const name = allocateTargetName(targets, base, match)
-    // Editing an existing target keeps whatever the flags leave unsaid — the star
-    // (toggled from the list, not here), strategy, pick and navigate.
+    const name = nameForAdd(targets, {
+      name: args.name,
+      title: args.title ?? derived.title,
+      match,
+    })
+    // Updating an existing target keeps whatever the flags leave unsaid — its
+    // title and url, the star (toggled with `fav`), strategy, pick and navigate.
     const existing = findTarget({ targets }, name)
     upsertTarget(
       {
         name,
         match,
-        url,
-        title,
-        strategy: (args.strategy as Strategy | undefined) ?? existing?.strategy,
-        pick: (args.pick as Pick | undefined) ?? existing?.pick,
+        url: url ?? existing?.url,
+        title: args.title ?? existing?.title ?? derived.title,
+        strategy: strategy ?? existing?.strategy,
+        pick: pick ?? existing?.pick,
         favorite: args.favorite || existing?.favorite ? true : undefined,
         navigate: (args.navigate ?? existing?.navigate) ? true : undefined,
       },
       resync,
     )
     console.log(ok(`saved ${bold(name)}`))
+    resync()
+  },
+})
+
+const edit = defineCommand({
+  meta: {
+    name: "edit",
+    description:
+      "Edit a saved target in place — the id never changes (pass \"\" to clear --title or --url)",
+  },
+  args: {
+    name: {
+      type: "positional",
+      required: true,
+      description: "Target id to edit (see `foxhop list`)",
+    },
+    title: { type: "string", description: "New label" },
+    match: { type: "string", description: "New match" },
+    url: { type: "string", description: "New fallback URL" },
+    strategy: {
+      type: "string",
+      description: "hostname | prefix | exact | search",
+    },
+    pick: {
+      type: "string",
+      description: "recent | first | pinned (which tab when several match)",
+    },
+    navigate: {
+      type: "boolean",
+      description:
+        "Let `focus <name> --url` repoint the matching tab (--no-navigate to turn off)",
+    },
+  },
+  run: ({ args }) => {
+    const name = String(args.name)
+    const patch: TargetPatch = {}
+    if (args.title !== undefined) patch.title = args.title.trim() || undefined
+    if (args.url !== undefined) patch.url = args.url.trim() || undefined
+    if (args.match !== undefined) {
+      if (!args.match.trim()) {
+        console.error(fail("--match cannot be empty"))
+        process.exit(1)
+      }
+      patch.match = args.match.trim()
+    }
+    const strategy = oneOf<Strategy>("strategy", args.strategy, STRATEGIES)
+    if (strategy) patch.strategy = strategy
+    const pick = oneOf<Pick>("pick", args.pick, PICKS)
+    if (pick) patch.pick = pick
+    if (args.navigate !== undefined)
+      patch.navigate = args.navigate ? true : undefined
+    const { found } = editTarget(name, patch, resync)
+    if (!found) {
+      console.error(fail(`no target named "${name}"`))
+      process.exit(1)
+    }
+    console.log(ok(`updated ${bold(name)}`))
     resync()
   },
 })
@@ -405,6 +482,7 @@ const fav = defineCommand({
         `${bold(String(args.name))} ${favorite ? yellow("favourited ★") : "unfavourited"}`,
       ),
     )
+    resync()
   },
 })
 
@@ -414,6 +492,7 @@ const subCommands = {
   list,
   tabs,
   add,
+  edit,
   remove,
   fav,
   init,

@@ -10,8 +10,7 @@ import {
   removeTarget,
   toggleFavorite,
   deriveTarget,
-  allocateTargetName,
-  slugify,
+  nameForAdd,
   cliEntryForScripts,
   type Target,
 } from "./config.js"
@@ -35,20 +34,19 @@ export const handleConfigMutation = (request: ConfigRequest) => {
       if (!request.url) return { ok: false, error: "missing url" }
       const derived = deriveTarget(request.url)
       // The id is the slug of the popup's title (or the derived one) — the
-      // popup never sends a name. Re-adding the same site refreshes its URL
-      // without wiping user-set fields; a taken id with a different match
-      // gets a -2, -3, … suffix instead of overwriting.
+      // popup never sends a name. Re-adding a saved site refreshes its URL and
+      // keeps everything the user set, title included; a taken id with a
+      // different match gets a -2, -3, … suffix instead of overwriting.
       const title = request.title || derived.title
       const { targets: current } = readConfig(resync)
-      const base = slugify(title) || slugify(derived.match) || derived.name
-      const name = allocateTargetName(current, base, derived.match)
+      const name = nameForAdd(current, { title, match: derived.match })
       const existing = findTarget({ targets: current }, name)
       const { targets } = upsertTarget(
         {
           ...existing,
           name,
           match: existing?.match ?? derived.match,
-          title,
+          title: existing?.title ?? title,
           url: request.url,
         },
         resync,
@@ -57,7 +55,13 @@ export const handleConfigMutation = (request: ConfigRequest) => {
       return { ok: true, targets }
     }
     case "config:upsert": {
+      // An edit from the popup: it replaces an existing target and can never
+      // create one, so every id still comes from an add.
       if (!request.target) return { ok: false, error: "missing target" }
+      if (!findTarget(readConfig(resync), request.target.name))
+        return { ok: false, error: `no target named "${request.target.name}"` }
+      if (!request.target.match?.trim())
+        return { ok: false, error: "match cannot be empty" }
       const result = {
         ok: true,
         targets: upsertTarget(request.target, resync).targets,

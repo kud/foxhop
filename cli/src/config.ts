@@ -1,4 +1,10 @@
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs"
+import {
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+  existsSync,
+} from "node:fs"
 import { basename, dirname, join } from "node:path"
 import { CONFIG_DIR, CONFIG_PATH, SCHEMA_PATH } from "./paths.js"
 
@@ -21,8 +27,15 @@ export interface Target {
 
 export interface Config {
   targets: Target[]
-  version?: number
 }
+
+export const STRATEGIES: readonly Strategy[] = [
+  "hostname",
+  "prefix",
+  "exact",
+  "search",
+]
+export const PICKS: readonly Pick[] = ["recent", "first", "pinned"]
 
 // Config format version. Set once the ids were migrated to title slugs;
 // after that targets are never renamed again.
@@ -32,22 +45,35 @@ export const CONFIG_VERSION = 2
 // that own the node/cli paths (cli.ts, host.ts) pass onMigrated to regenerate
 // them. config.ts takes a callback instead of importing sync.ts, which would
 // reintroduce the config/sync import cycle.
+//
+// A file that is not valid JSON throws instead of reading as empty: the next
+// write would otherwise replace every target the user had with just one.
 export const readConfig = (onMigrated?: () => void): Config => {
   if (!existsSync(CONFIG_PATH)) return { targets: [] }
+  let parsed: { version?: unknown; targets?: unknown }
   try {
-    const parsed = JSON.parse(readFileSync(CONFIG_PATH, "utf8"))
-    const stored = Array.isArray(parsed?.targets) ? parsed.targets : []
-    // Migrated configs are returned untouched — ids stay fixed after creation.
-    if (parsed?.version === CONFIG_VERSION)
-      return { targets: stored, version: CONFIG_VERSION }
-    const { targets, changed } = migrateTargetNames(stored)
-    writeConfig({ targets, version: CONFIG_VERSION })
-    if (changed) onMigrated?.()
-    return { targets, version: CONFIG_VERSION }
+    parsed = JSON.parse(readFileSync(CONFIG_PATH, "utf8"))
   } catch {
-    return { targets: [] }
+    throw new Error(`${CONFIG_PATH} is not valid JSON; fix it or move it aside`)
   }
+  const stored = (Array.isArray(parsed?.targets) ? parsed.targets : []).filter(
+    isRecord,
+  ) as unknown as Target[]
+  // Migrated configs are returned untouched — ids stay fixed after creation.
+  if (typeof parsed?.version === "number" && parsed.version >= CONFIG_VERSION)
+    return {
+      targets: stored.filter(
+        (target) => typeof target.name === "string" && target.name !== "",
+      ),
+    }
+  const { targets, changed } = migrateTargetNames(stored)
+  writeConfig({ targets })
+  if (changed) onMigrated?.()
+  return { targets }
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
 
 export const findTarget = (config: Config, name: string): Target | undefined =>
   config.targets.find((target) => target.name === name)
@@ -127,22 +153,25 @@ const writeSchema = () => {
   writeFileSync(SCHEMA_PATH, JSON.stringify(SCHEMA, null, 2) + "\n")
 }
 
+// Every write carries the version marker, so a file this code wrote is never
+// migrated again. The write goes to a sibling temp file and is renamed into
+// place, so the host and the CLI never read a half-written tabs.json.
 export const writeConfig = (config: Config): void => {
   writeSchema()
-  // The marker is always preserved: stamped configs are written untouched so
-  // ids stay fixed, while unstamped ones are migrated exactly once here.
-  const targets =
-    config.version === CONFIG_VERSION
-      ? config.targets
-      : migrateTargetNames(config.targets).targets
+  const temporary = `${CONFIG_PATH}.${process.pid}.tmp`
   writeFileSync(
-    CONFIG_PATH,
+    temporary,
     JSON.stringify(
-      { $schema: "./tabs.schema.json", version: CONFIG_VERSION, targets },
+      {
+        $schema: "./tabs.schema.json",
+        version: CONFIG_VERSION,
+        targets: config.targets,
+      },
       null,
       2,
     ) + "\n",
   )
+  renameSync(temporary, CONFIG_PATH)
 }
 
 export const writeExampleConfig = (): string => {
@@ -151,30 +180,55 @@ export const writeExampleConfig = (): string => {
   return CONFIG_PATH
 }
 
+// Replaces the target with the same id in place (keeping its position in the
+// list), or appends it when the id is new.
 export const upsertTarget = (
   target: Target,
   onMigrated?: () => void,
 ): Config => {
-  const { targets, version } = readConfig(onMigrated)
+  const { targets } = readConfig(onMigrated)
+  const exists = targets.some((existing) => existing.name === target.name)
   const next = {
-    targets: [
-      ...targets.filter((existing) => existing.name !== target.name),
-      target,
-    ],
-    version,
+    targets: exists
+      ? targets.map((existing) =>
+          existing.name === target.name ? target : existing,
+        )
+      : [...targets, target],
   }
   writeConfig(next)
   return next
+}
+
+// The fields an edit may change. The id (name) is never one of them, and the
+// favourite is toggled on its own. A key present with an undefined value
+// clears that field; an absent key leaves it as it is.
+export type TargetPatch = Partial<Omit<Target, "name" | "favorite">>
+
+export const editTarget = (
+  name: string,
+  patch: TargetPatch,
+  onMigrated?: () => void,
+): { found: boolean; targets: Target[] } => {
+  const { targets } = readConfig(onMigrated)
+  const current = findTarget({ targets }, name)
+  if (!current) return { found: false, targets }
+  const edited = Object.fromEntries(
+    Object.entries({ ...current, ...patch, name }).filter(
+      ([, value]) => value !== undefined,
+    ),
+  ) as unknown as Target
+  if (!edited.match?.trim()) throw new Error("match cannot be empty")
+  return { found: true, targets: upsertTarget(edited).targets }
 }
 
 export const removeTarget = (
   name: string,
   onMigrated?: () => void,
 ): { targets: Target[]; removed: boolean } => {
-  const { targets, version } = readConfig(onMigrated)
+  const { targets } = readConfig(onMigrated)
   const filtered = targets.filter((target) => target.name !== name)
   const removed = filtered.length !== targets.length
-  if (removed) writeConfig({ targets: filtered, version })
+  if (removed) writeConfig({ targets: filtered })
   return { targets: filtered, removed }
 }
 
@@ -182,7 +236,7 @@ export const toggleFavorite = (
   name: string,
   onMigrated?: () => void,
 ): { favorite: boolean; found: boolean } => {
-  const { targets, version } = readConfig(onMigrated)
+  const { targets } = readConfig(onMigrated)
   let favorite = false
   let found = false
   const next = targets.map((target) => {
@@ -192,7 +246,7 @@ export const toggleFavorite = (
     const { favorite: _was, ...rest } = target
     return favorite ? { ...rest, favorite: true } : rest
   })
-  if (found) writeConfig({ targets: next, version })
+  if (found) writeConfig({ targets: next })
   return { favorite, found }
 }
 
@@ -251,7 +305,10 @@ export const migrateTargetNames = (
   let changed = false
   const next = targets.map((target) => {
     const base =
-      slugify(target.title ?? "") || slugify(target.match) || target.name
+      slugify(String(target.title ?? "")) ||
+      slugify(String(target.match ?? "")) ||
+      slugify(String(target.name ?? "")) ||
+      "target"
     let name = base
     let suffix = 2
     while (taken.has(name)) name = `${base}-${suffix++}`
@@ -272,6 +329,9 @@ export const cliEntryForScripts = (selfPath: string): string => {
   return existsSync(sibling) ? sibling : selfPath
 }
 
+const sameMatch = (a: string | undefined, b: string) =>
+  (a ?? "").trim().toLowerCase() === b.trim().toLowerCase()
+
 // Adding must never overwrite a different target. Re-adding the same site
 // (same match) reuses its id so the target updates in place; a colliding id
 // whose match differs gets a -2, -3, … suffix instead.
@@ -281,12 +341,28 @@ export const allocateTargetName = (
   match: string,
 ): string => {
   const existing = targets.find((target) => target.name === baseName)
-  if (!existing || existing.match === match) return baseName
+  if (!existing || sameMatch(existing.match, match)) return baseName
   let suffix = 2
   while (true) {
     const candidate = `${baseName}-${suffix}`
     const clash = targets.find((target) => target.name === candidate)
-    if (!clash || clash.match === match) return candidate
+    if (!clash || sameMatch(clash.match, match)) return candidate
     suffix += 1
   }
+}
+
+// The id an add lands on, shared by the CLI and the popup. Without an explicit
+// id, a target that already has this match is the same site and is updated in
+// place, whatever its title; otherwise the id is the slug of the title (or of
+// the match when the title has no letters or digits, e.g. emoji only).
+export const nameForAdd = (
+  targets: Target[],
+  { name, title, match }: { name?: string; title: string; match: string },
+): string => {
+  if (name === undefined) {
+    const sameSite = targets.find((target) => sameMatch(target.match, match))
+    if (sameSite) return sameSite.name
+  }
+  const base = slugify(name ?? title) || slugify(match) || "target"
+  return allocateTargetName(targets, base, match)
 }

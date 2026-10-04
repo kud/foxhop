@@ -21,7 +21,8 @@ foxhop focus chatgpt                       # focus a saved target, foregrounding
 foxhop focus --match figma.com --url https://figma.com
 foxhop list                                # saved targets (--json for machine output)
 foxhop tabs                                # currently open Firefox tabs (--json)
-foxhop add gmail --match mail.google.com --url https://mail.google.com --title Gmail
+foxhop add https://mail.google.com --title Gmail   # id: gmail (slug of the title)
+foxhop edit gmail --url https://mail.google.com/mail/u/1   # change fields, never the id
 foxhop remove gmail
 foxhop sync                                # generate per-tab Raycast hotkey scripts
 ```

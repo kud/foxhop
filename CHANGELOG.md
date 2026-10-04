@@ -9,9 +9,12 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 ### Highlights
 
 - **Target ids are now the kebab-case slug of the title, fixed at creation.** `Notion Calendar` becomes `notion-calendar`, and the id never changes afterwards. A taken id whose target differs gets a `-2`, `-3` suffix instead of overwriting.
-- **One-time migration of tabs.json.** Older hostname style ids are renamed on load (`calendar.notion.so` becomes `calendar`) and the file is stamped so the migration never runs again. Old names are not kept as aliases, so update any saved `foxhop focus <name>` calls after upgrading.
+- **One-time migration of tabs.json.** Older ids are renamed on load to the slug of their title (`bsky` titled Bluesky becomes `bluesky`, `calendar` titled Notion Calendar becomes `notion-calendar`) and the file is stamped so the migration never runs again. Old names are not kept as aliases, so update any saved `foxhop focus <name>` calls after upgrading.
 - **Popup edits now regenerate the Raycast scripts.** Adding, editing, removing or favouriting a target in the popup resyncs the generated hotkey scripts, matching what the CLI already did. The editor shows the target id (read-only) with its Raycast script name.
 - **The popup remembers favicons.** Each target keeps its last-seen icon, so it shows whether or not a tab is open. A separate dot marks targets with an open tab.
+- **`foxhop edit <id>` changes a target in place.** `--title`, `--match`, `--url`, `--strategy`, `--pick` and `--navigate`/`--no-navigate` update just those fields (pass `""` to clear the title or URL), and the id never changes. The Raycast editor uses it, so Match is editable there again.
+- **Re-adding a saved site updates it.** `foxhop add` and the popup reuse the target that already has that match, keeping its id and title, instead of creating a near duplicate under a new name.
+- **A malformed tabs.json is no longer wiped.** It now fails loudly instead of reading as empty, and writes go through a temp file and a rename so the CLI and the host never see a half-written file.
 
 ### Internal
 

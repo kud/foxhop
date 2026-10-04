@@ -243,9 +243,16 @@ editor.addEventListener("submit", async (event) => {
 editorCancel.addEventListener("click", closeEditor)
 
 // Record the favicon of every target with a matching open tab, persisting
-// the cache so icons survive closed tabs and restarts.
+// the cache so icons survive closed tabs and restarts. Entries for ids that
+// no longer exist are dropped, so a removed target leaves nothing behind.
 const rememberFavicons = async () => {
   let changed = false
+  const ids = new Set(targets.map((target) => target.name))
+  for (const id of Object.keys(faviconCache)) {
+    if (ids.has(id)) continue
+    delete faviconCache[id]
+    changed = true
+  }
   for (const target of targets) {
     const icon = findMatchingTab(target, openTabs)?.favIconUrl
     if (icon && faviconCache[target.name] !== icon) {
