@@ -6,6 +6,7 @@ import {
   createJwt,
   diffListing,
   formatApiError,
+  liveReadHeaders,
   parseArgs,
   planPreviewSync,
   planRequests,
@@ -343,5 +344,16 @@ describe("formatApiError", () => {
     expect(
       formatApiError(400, JSON.stringify({ description: ["Too long"] })),
     ).toContain("description: Too long")
+  })
+})
+
+describe("liveReadHeaders", () => {
+  it("authenticates the live read when credentials exist, so the public cache is bypassed", () => {
+    const headers = liveReadHeaders({ WEB_EXT_API_KEY: "user:1:2", WEB_EXT_API_SECRET: "s3cret" })
+    expect(headers.Authorization).toMatch(/^JWT [\w-]+\.[\w-]+\.[\w-]+$/)
+  })
+
+  it("stays anonymous without credentials", () => {
+    expect(liveReadHeaders({})).toEqual({})
   })
 })
