@@ -3,12 +3,14 @@
     "en-US": "Fox Hop"
   },
   "summary": {
-    "en-US": "Jump to a specific Firefox tab (ChatGPT, Todoist, …) from a global hotkey — via the companion foxhop CLI and Raycast."
+    "en-US": "Jump to a saved Firefox tab (ChatGPT, Todoist, your inbox) from anywhere on macOS with a hotkey, a Raycast command or the terminal. Opens the tab if it is not there yet."
   },
   "description": {
-    "en-US": "Fox Hop lets you jump straight to a specific Firefox tab — your ChatGPT, Todoist, email, a dashboard — from anywhere on macOS, with a global hotkey or the command line.\n\nFirefox can't be driven by AppleScript, so Fox Hop pairs with a small companion command-line tool, <strong>foxhop-cli</strong>, which talks to this extension over native messaging. You list the tabs you care about in a simple config file; a\nhotkey then activates the matching tab (and opens it if it isn't already open).\n\n<strong>This extension does nothing on its own</strong> — it needs the free, open-source foxhop CLI:\n• npm: <code>@kud/foxhop-cli</code>\n• Source & setup: <a href=\"https://github.com/kud/foxhop\" rel=\"nofollow\">https://github.com/kud/foxhop</a>\n\nFox Hop collects no data: it reads tab URLs/titles only locally to find the one you asked for, and communicates solely with the local companion app."
+    "en-US": "Fox Hop takes you straight to the Firefox tab you meant, from any app on macOS. Press a hotkey, pick it in Raycast or type <code>foxhop focus todoist</code>, and Firefox comes forward on that tab. If it is not open yet, Fox Hop opens it.\n\n<strong>How it works</strong>\nFirefox cannot be scripted from macOS the way Safari or Chrome can, so Fox Hop comes in two parts: this extension, and a small free command-line tool, <code>@kud/foxhop-cli</code>, that talks to it over native messaging. You save the tabs you care about once, then reach them from:\n• a global hotkey, through Raycast script commands that <code>foxhop sync</code> writes for you\n• the Fox Hop Raycast extension, to search, add and edit your tabs\n• the terminal\n• this extension's popup, which lists your tabs, shows which ones are open, and adds the current tab in one click\n\n<strong>This extension needs the CLI.</strong> Install it with <code>npm install -g @kud/foxhop-cli</code>, then run <code>foxhop install</code>. Setup and docs: <a href=\"https://kud.io/projects/foxhop\">kud.io/projects/foxhop</a>\n\n<strong>Privacy</strong>\nFox Hop collects nothing and sends nothing anywhere. It reads tab addresses and titles on your machine to find the one you asked for, and talks only to the companion app on your Mac.\n\nFree and open source: <a href=\"https://github.com/kud/foxhop\">github.com/kud/foxhop</a>"
   },
-  "homepage": null,
+  "homepage": {
+    "en-US": "https://kud.io/projects/foxhop"
+  },
   "support_url": {
     "en-US": "https://github.com/kud/foxhop"
   },
