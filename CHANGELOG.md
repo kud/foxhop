@@ -4,6 +4,14 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
+## Unreleased
+
+### Fixes
+
+- **Raycast now picks up icon changes.** The generated scripts reference a content-addressed icon (`foxhop-<hash>.png`, from the first 8 hex chars of the icon's sha256) instead of a fixed `foxhop.png`, so Raycast's per-path icon cache can't serve a stale image. `foxhop sync` prunes older generated icons (including the legacy `foxhop.png`) while leaving unrelated files alone, `sync --clean` removes them as well, and re-running `sync` with nothing changed rewrites no files.
+
+---
+
 ## [2.0.1] — 2026-10-05
 
 ### Highlights
