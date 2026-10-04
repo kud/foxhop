@@ -1,20 +1,9 @@
+import { matchesTarget } from "./match.js"
+
 const HOST_NAME = "io.kud.foxhop"
 
-const matchesTab = (tab, match, strategy) => {
-  if (!tab.url) return false
-  if (strategy === "exact") return tab.url === match
-  if (strategy === "prefix") return tab.url.startsWith(match)
-  if (strategy === "search") {
-    return `${tab.url} ${tab.title ?? ""}`
-      .toLowerCase()
-      .includes(match.toLowerCase())
-  }
-  try {
-    return new URL(tab.url).hostname.includes(match)
-  } catch {
-    return false
-  }
-}
+const matchesTab = (tab, match, strategy) =>
+  matchesTarget({ match, strategy }, tab)
 
 const mostRecent = (tabs) =>
   tabs.reduce((best, tab) =>

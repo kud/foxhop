@@ -56,7 +56,8 @@ const focus = defineCommand({
     },
     match: {
       type: "string",
-      description: "Ad-hoc substring to match against tab URLs",
+      description:
+        "Ad-hoc match sent to the extension (hostname: host equals match or is a subdomain)",
     },
     url: {
       type: "string",

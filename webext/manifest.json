@@ -14,7 +14,8 @@
   },
   "permissions": ["tabs", "nativeMessaging", "storage"],
   "background": {
-    "scripts": ["src/background.js"]
+    "scripts": ["src/background.js"],
+    "type": "module"
   },
   "browser_action": {
     "default_title": "Fox Hop",

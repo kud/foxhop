@@ -76,7 +76,8 @@ const SCHEMA = {
           title: { type: "string", description: "Human-friendly label" },
           match: {
             type: "string",
-            description: "Substring matched against tab URLs/titles",
+            description:
+              "Matched against tabs (hostname: host equals match or is a subdomain, case and leading www. ignored)",
           },
           url: { type: "string", description: "Opened when no tab matches" },
           strategy: {

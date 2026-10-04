@@ -1,13 +1,11 @@
-// Pure target-to-tab matching for the popup (no browser APIs, so vitest in
-// cli/test can import it directly).
+// Pure target-to-tab matching shared by the popup and the background page
+// (no browser APIs, so vitest in cli/test can import it directly).
 //
-// Strategy semantics mirror the background matcher (webext/src/background.js)
-// for prefix, exact and search. The hostname strategy is deliberately
-// stricter than the background's substring check: a bare `includes` lets a
-// sibling domain match (notchatgpt.com ends with chatgpt.com), so here the
-// tab host must equal the target match or sit under it as a subdomain, after
-// folding case and a leading www. on both sides. That also covers redirects:
-// the tab host is compared against target.match, never the saved url.
+// The hostname strategy matches when the tab host equals the target match or
+// sits under it as a subdomain, after folding case and a leading www. on
+// both sides — a bare `includes` would let a sibling domain match
+// (notchatgpt.com ends with chatgpt.com). That also covers redirects: the
+// tab host is compared against target.match, never the saved url.
 
 export const normalizeHost = (host) =>
   String(host ?? "")

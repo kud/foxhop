@@ -1,4 +1,4 @@
-import { findMatchingTab } from "./match.js"
+import { findMatchingTab } from "../match.js"
 
 const listEl = document.getElementById("list")
 const stateEl = document.getElementById("state")
