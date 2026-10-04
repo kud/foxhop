@@ -4,6 +4,21 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
+## [Unreleased]
+
+### Highlights
+
+- **Target ids are now the kebab-case slug of the title, fixed at creation.** `Notion Calendar` becomes `notion-calendar`, and the id never changes afterwards. A taken id whose target differs gets a `-2`, `-3` suffix instead of overwriting.
+- **One-time migration of tabs.json.** Older hostname style ids are renamed on load (`calendar.notion.so` becomes `calendar`) and the file is stamped so the migration never runs again. Old names are not kept as aliases, so update any saved `foxhop focus <name>` calls after upgrading.
+- **Popup edits now regenerate the Raycast scripts.** Adding, editing, removing or favouriting a target in the popup resyncs the generated hotkey scripts, matching what the CLI already did. The editor shows the target id (read-only) with its Raycast script name.
+- **The popup remembers favicons.** Each target keeps its last-seen icon, so it shows whether or not a tab is open. A separate dot marks targets with an open tab.
+
+### Internal
+
+- `cli/src/config.ts` no longer imports `sync.ts`: shared paths moved to `cli/src/paths.ts`, and the resync after migration is now a callback the CLI and host pass in.
+
+---
+
 ## [1.3.0] — 2026-09-23
 
 ### Highlights

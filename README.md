@@ -63,6 +63,8 @@ $ foxhop sync                   # generate per-tab Raycast hotkey scripts
 
 Set `FOXHOP_BROWSER` to override the default Firefox Nightly (e.g. `FOXHOP_BROWSER=Firefox`).
 
+Target ids are the kebab-case slug of the title (`Notion Calendar` becomes `notion-calendar`), fixed when the target is created and never renamed. A taken id gets a `-2`, `-3` suffix instead of overwriting another target. Older configs migrate once on load (`calendar.notion.so` becomes `calendar`); old names are not kept as aliases, so update saved `foxhop focus <name>` calls after upgrading. Editing a target in the popup regenerates the Raycast scripts, and the popup shows each id with its script name. It also remembers favicons, so targets keep their icon when no tab is open.
+
 ## Development
 
 ```sh

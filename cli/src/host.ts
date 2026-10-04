@@ -30,7 +30,7 @@ export const handleConfigMutation = (request: ConfigRequest) => {
     )
   switch (request.op) {
     case "config:read":
-      return { ok: true, targets: readConfig().targets }
+      return { ok: true, targets: readConfig(resync).targets }
     case "config:add": {
       if (!request.url) return { ok: false, error: "missing url" }
       const derived = deriveTarget(request.url)
@@ -39,33 +39,39 @@ export const handleConfigMutation = (request: ConfigRequest) => {
       // without wiping user-set fields; a taken id with a different match
       // gets a -2, -3, … suffix instead of overwriting.
       const title = request.title || derived.title
-      const { targets: current } = readConfig()
+      const { targets: current } = readConfig(resync)
       const base = slugify(title) || slugify(derived.match) || derived.name
       const name = allocateTargetName(current, base, derived.match)
       const existing = findTarget({ targets: current }, name)
-      const { targets } = upsertTarget({
-        ...existing,
-        name,
-        match: existing?.match ?? derived.match,
-        title,
-        url: request.url,
-      })
+      const { targets } = upsertTarget(
+        {
+          ...existing,
+          name,
+          match: existing?.match ?? derived.match,
+          title,
+          url: request.url,
+        },
+        resync,
+      )
       resync()
       return { ok: true, targets }
     }
     case "config:upsert": {
       if (!request.target) return { ok: false, error: "missing target" }
-      const result = { ok: true, targets: upsertTarget(request.target).targets }
+      const result = {
+        ok: true,
+        targets: upsertTarget(request.target, resync).targets,
+      }
       resync()
       return result
     }
     case "config:remove": {
-      const result = removeTarget(request.name ?? "")
+      const result = removeTarget(request.name ?? "", resync)
       if (result.removed) resync()
       return { ok: true, targets: result.targets }
     }
     case "config:favorite": {
-      const { found } = toggleFavorite(request.name ?? "")
+      const { found } = toggleFavorite(request.name ?? "", resync)
       if (found) resync()
       return { ok: true, targets: readConfig().targets }
     }

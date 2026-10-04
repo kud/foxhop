@@ -1,3 +1,5 @@
+import { findMatchingTab } from "./match.js"
+
 const listEl = document.getElementById("list")
 const stateEl = document.getElementById("state")
 const searchEl = document.getElementById("search")
@@ -14,7 +16,10 @@ const fUrl = document.getElementById("f-url")
 const fNavigate = document.getElementById("f-navigate")
 
 let targets = []
-let tabFavicons = {}
+let openTabs = []
+// Last-seen favicon per target id, persisted in browser.storage.local so a
+// target keeps its icon even when no tab for it is open.
+let faviconCache = {}
 let editing = null
 
 const send = (message) => browser.runtime.sendMessage(message)
@@ -45,17 +50,10 @@ const hueFor = (key) => {
   return hash
 }
 
-const hostOf = (target) => {
-  try {
-    return new URL(target.url ?? `https://${target.match}`).hostname
-  } catch {
-    return target.match
-  }
-}
-
-// A target is "open" if a live tab matches its host — the same signal that
-// decides favicon vs monogram, so the cue and the ordering always agree.
-const isOpen = (target) => Boolean(tabFavicons[hostOf(target)])
+// A target is "open" when any live tab matches it (by match, not by saved
+// url, so redirects still count). The open cue is a separate indicator in
+// the row, never a different icon, so it agrees with this same signal.
+const isOpen = (target) => Boolean(findMatchingTab(target, openTabs))
 
 const orderedTargets = () => {
   const openFirst = (a, b) => Number(isOpen(b)) - Number(isOpen(a))
@@ -73,20 +71,42 @@ const filtered = () => {
   )
 }
 
-const iconFor = (target) => {
-  const favicon = tabFavicons[hostOf(target)]
-  if (favicon) {
-    const img = document.createElement("img")
-    img.className = "favicon"
-    img.src = favicon
-    img.alt = ""
-    return img
-  }
+const monogramFor = (target) => {
   const monogram = document.createElement("span")
   monogram.className = "monogram"
   monogram.style.background = `hsl(${hueFor(target.name)} 60% ${MONOGRAM_LIGHTNESS}%)`
   monogram.textContent = (target.title ?? target.name).slice(0, 1)
   return monogram
+}
+
+const forgetFavicon = async (id) => {
+  if (!(id in faviconCache)) return
+  delete faviconCache[id]
+  try {
+    await browser.storage.local.set({ favicons: faviconCache })
+  } catch {}
+}
+
+// Prefer the live tab's favicon, else the last-seen one from the cache; the
+// monogram is only for targets never seen open. A dead icon (cached url gone)
+// falls back to the monogram and is dropped from the cache.
+const iconFor = (target) => {
+  const favicon =
+    findMatchingTab(target, openTabs)?.favIconUrl ?? faviconCache[target.name]
+  if (!favicon) return monogramFor(target)
+  const img = document.createElement("img")
+  img.className = "favicon"
+  img.src = favicon
+  img.alt = ""
+  img.addEventListener(
+    "error",
+    () => {
+      img.replaceWith(monogramFor(target))
+      forgetFavicon(target.name)
+    },
+    { once: true },
+  )
+  return img
 }
 
 const rowButton = (cls, glyph, label, onClick) => {
@@ -143,6 +163,17 @@ const renderRow = (target) => {
   })
 
   main.append(iconFor(target), text)
+  // Open state is a separate shape, never a swapped icon: a filled dot when
+  // a tab is open, nothing when not, labelled for assistive tech. Presence
+  // carries the meaning, so it reads without colour.
+  if (isOpen(target)) {
+    const dot = document.createElement("span")
+    dot.className = "open-dot"
+    dot.setAttribute("role", "img")
+    dot.setAttribute("aria-label", "Open")
+    dot.title = "Open"
+    main.append(dot)
+  }
   main.addEventListener("click", () => focus(target))
   row.append(main, fav, edit, remove)
   return row
@@ -165,6 +196,7 @@ const render = () => {
 const refresh = (next) => {
   if (Array.isArray(next)) targets = next
   render()
+  rememberFavicons()
 }
 
 const focus = async (target) => {
@@ -210,16 +242,21 @@ editor.addEventListener("submit", async (event) => {
 
 editorCancel.addEventListener("click", closeEditor)
 
-const buildTabFavicons = async () => {
-  const tabs = await browser.tabs.query({})
-  const map = {}
-  for (const tab of tabs) {
-    if (!tab.url || !tab.favIconUrl) continue
-    try {
-      map[new URL(tab.url).hostname] = tab.favIconUrl
-    } catch {}
+// Record the favicon of every target with a matching open tab, persisting
+// the cache so icons survive closed tabs and restarts.
+const rememberFavicons = async () => {
+  let changed = false
+  for (const target of targets) {
+    const icon = findMatchingTab(target, openTabs)?.favIconUrl
+    if (icon && faviconCache[target.name] !== icon) {
+      faviconCache[target.name] = icon
+      changed = true
+    }
   }
-  return map
+  if (!changed) return
+  try {
+    await browser.storage.local.set({ favicons: faviconCache })
+  } catch {}
 }
 
 addEl.addEventListener("click", async () => {
@@ -245,7 +282,11 @@ const load = async () => {
     showWarning()
     return
   }
-  tabFavicons = await buildTabFavicons()
+  try {
+    const stored = await browser.storage.local.get("favicons")
+    if (stored?.favicons) faviconCache = stored.favicons
+  } catch {}
+  openTabs = await browser.tabs.query({})
   const ack = await send({ type: "targets" }).catch(() => null)
   if (!ack?.ok) {
     showWarning()

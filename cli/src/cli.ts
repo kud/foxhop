@@ -18,7 +18,8 @@ import {
 import { sendToHost } from "./client.js"
 import { SOCKET_PATH } from "./constants.js"
 import { install } from "./install.js"
-import { sync, clearScripts, autoSync, defaultScriptsDir } from "./sync.js"
+import { sync, clearScripts, autoSync } from "./sync.js"
+import { defaultScriptsDir } from "./paths.js"
 import { fileURLToPath } from "node:url"
 import { bold, dim, cyan, yellow, ok, fail } from "./ui.js"
 
@@ -35,6 +36,12 @@ const runOpen = (args: string[]) => {
 }
 const foreground = () => runOpen(["-a", browserApp()])
 const openUrl = (url: string) => runOpen([url])
+
+// Regenerate the Raycast scripts after a mutation — and after the one-time
+// id migration, which readConfig reports through this callback. Only runs
+// once the user has opted in by generating scripts at least once.
+const resync = () =>
+  autoSync(process.execPath, fileURLToPath(import.meta.url))
 
 const focus = defineCommand({
   meta: {
@@ -138,7 +145,7 @@ const focus = defineCommand({
 // target opts in (`navigate: true`); otherwise --url just replaces the
 // fallback-open URL, so existing tabs are never silently repointed.
 const resolveNamed = (name: string, url?: string) => {
-  const target = findTarget(readConfig(), name)
+  const target = findTarget(readConfig(resync), name)
   if (!target) return null
   return {
     op: "focus",
@@ -154,7 +161,7 @@ const list = defineCommand({
   meta: { name: "list", description: "List saved focus targets" },
   args: { json: { type: "boolean", description: "Output JSON" } },
   run: ({ args }) => {
-    const { targets } = readConfig()
+    const { targets } = readConfig(resync)
     if (args.json) {
       process.stdout.write(JSON.stringify(targets, null, 2) + "\n")
       return
@@ -330,24 +337,27 @@ const add = defineCommand({
     // The id is the slug of the title (or of --name when given). Never
     // overwrite a different target: a taken id whose match differs gets a
     // -2, -3, … suffix instead.
-    const { targets } = readConfig()
+    const { targets } = readConfig(resync)
     const base = slugify(args.name ?? title) || slugify(match) || derived.name
     const name = allocateTargetName(targets, base, match)
     // Editing an existing target keeps whatever the flags leave unsaid — the star
     // (toggled from the list, not here), strategy, pick and navigate.
     const existing = findTarget({ targets }, name)
-    upsertTarget({
-      name,
-      match,
-      url,
-      title,
-      strategy: (args.strategy as Strategy | undefined) ?? existing?.strategy,
-      pick: (args.pick as Pick | undefined) ?? existing?.pick,
-      favorite: args.favorite || existing?.favorite ? true : undefined,
-      navigate: (args.navigate ?? existing?.navigate) ? true : undefined,
-    })
+    upsertTarget(
+      {
+        name,
+        match,
+        url,
+        title,
+        strategy: (args.strategy as Strategy | undefined) ?? existing?.strategy,
+        pick: (args.pick as Pick | undefined) ?? existing?.pick,
+        favorite: args.favorite || existing?.favorite ? true : undefined,
+        navigate: (args.navigate ?? existing?.navigate) ? true : undefined,
+      },
+      resync,
+    )
     console.log(ok(`saved ${bold(name)}`))
-    autoSync(process.execPath, fileURLToPath(import.meta.url))
+    resync()
   },
 })
 
@@ -361,13 +371,13 @@ const remove = defineCommand({
     },
   },
   run: ({ args }) => {
-    const { removed } = removeTarget(String(args.name))
+    const { removed } = removeTarget(String(args.name), resync)
     if (!removed) {
       console.error(fail(`no target named "${args.name}"`))
       process.exit(1)
     }
     console.log(ok(`removed ${bold(String(args.name))}`))
-    autoSync(process.execPath, fileURLToPath(import.meta.url))
+    resync()
   },
 })
 
@@ -384,7 +394,7 @@ const fav = defineCommand({
     },
   },
   run: ({ args }) => {
-    const { favorite, found } = toggleFavorite(String(args.name))
+    const { favorite, found } = toggleFavorite(String(args.name), resync)
     if (!found) {
       console.error(fail(`no target named "${args.name}"`))
       process.exit(1)

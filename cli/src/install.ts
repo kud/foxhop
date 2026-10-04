@@ -7,7 +7,7 @@ import {
   MANIFEST_DIR,
   MANIFEST_PATH,
 } from "./constants.js"
-import { CONFIG_DIR } from "./config.js"
+import { CONFIG_DIR } from "./paths.js"
 
 // Firefox launches native messaging hosts with a minimal GUI PATH
 // (/usr/bin:/bin:/usr/sbin:/sbin) that excludes version-managed node

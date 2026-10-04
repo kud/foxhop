@@ -8,13 +8,14 @@ import {
   rmSync,
 } from "node:fs"
 import { join } from "node:path"
-import { readConfig, CONFIG_DIR, type Target } from "./config.js"
+import { readConfig, type Target } from "./config.js"
+import { defaultScriptsDir } from "./paths.js"
 import { ICON_PNG_BASE64 } from "./icon.js"
 
 const MARKER = "@foxhop.generated"
 const ICON_FILE = "foxhop.png"
 
-export const defaultScriptsDir = () => join(CONFIG_DIR, "scripts")
+export { defaultScriptsDir }
 
 // Keep the generated hotkey scripts mirrored to the targets after a mutation —
 // but only once the user has opted in by generating them at least once (the

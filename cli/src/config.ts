@@ -1,8 +1,9 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs"
-import { homedir } from "node:os"
 import { basename, dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
-import { defaultScriptsDir, sync } from "./sync.js"
+import { CONFIG_DIR, CONFIG_PATH, SCHEMA_PATH } from "./paths.js"
+
+// Re-exported so existing import sites keep working; paths.ts owns them.
+export { CONFIG_DIR, CONFIG_PATH, SCHEMA_PATH }
 
 export type Strategy = "hostname" | "prefix" | "exact" | "search"
 export type Pick = "recent" | "first" | "pinned"
@@ -23,16 +24,15 @@ export interface Config {
   version?: number
 }
 
-const xdgConfigHome = process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config")
-export const CONFIG_DIR = join(xdgConfigHome, "foxhop")
-export const CONFIG_PATH = join(CONFIG_DIR, "tabs.json")
-export const SCHEMA_PATH = join(CONFIG_DIR, "tabs.schema.json")
-
 // Config format version. Set once the ids were migrated to title slugs;
 // after that targets are never renamed again.
 export const CONFIG_VERSION = 2
 
-export const readConfig = (): Config => {
+// After a migration the generated Raycast scripts name stale ids, so callers
+// that own the node/cli paths (cli.ts, host.ts) pass onMigrated to regenerate
+// them. config.ts takes a callback instead of importing sync.ts, which would
+// reintroduce the config/sync import cycle.
+export const readConfig = (onMigrated?: () => void): Config => {
   if (!existsSync(CONFIG_PATH)) return { targets: [] }
   try {
     const parsed = JSON.parse(readFileSync(CONFIG_PATH, "utf8"))
@@ -42,12 +42,7 @@ export const readConfig = (): Config => {
       return { targets: stored, version: CONFIG_VERSION }
     const { targets, changed } = migrateTargetNames(stored)
     writeConfig({ targets, version: CONFIG_VERSION })
-    if (changed && existsSync(defaultScriptsDir())) {
-      sync(
-        process.execPath,
-        cliEntryForScripts(fileURLToPath(import.meta.url)),
-      )
-    }
+    if (changed) onMigrated?.()
     return { targets, version: CONFIG_VERSION }
   } catch {
     return { targets: [] }
@@ -155,8 +150,11 @@ export const writeExampleConfig = (): string => {
   return CONFIG_PATH
 }
 
-export const upsertTarget = (target: Target): Config => {
-  const { targets, version } = readConfig()
+export const upsertTarget = (
+  target: Target,
+  onMigrated?: () => void,
+): Config => {
+  const { targets, version } = readConfig(onMigrated)
   const next = {
     targets: [
       ...targets.filter((existing) => existing.name !== target.name),
@@ -170,8 +168,9 @@ export const upsertTarget = (target: Target): Config => {
 
 export const removeTarget = (
   name: string,
+  onMigrated?: () => void,
 ): { targets: Target[]; removed: boolean } => {
-  const { targets, version } = readConfig()
+  const { targets, version } = readConfig(onMigrated)
   const filtered = targets.filter((target) => target.name !== name)
   const removed = filtered.length !== targets.length
   if (removed) writeConfig({ targets: filtered, version })
@@ -180,8 +179,9 @@ export const removeTarget = (
 
 export const toggleFavorite = (
   name: string,
+  onMigrated?: () => void,
 ): { favorite: boolean; found: boolean } => {
-  const { targets, version } = readConfig()
+  const { targets, version } = readConfig(onMigrated)
   let favorite = false
   let found = false
   const next = targets.map((target) => {

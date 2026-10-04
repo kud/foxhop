@@ -98,6 +98,18 @@
   object-fit: contain;
 }
 
+/* Open indicator: a filled dot rendered only when a tab for the target is
+   open. Presence alone carries the meaning (dot vs. nothing), so it reads
+   without colour; the label covers assistive tech. */
+.open-dot {
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  align-self: center;
+  border-radius: 50%;
+  background: var(--fg);
+}
+
 .fav.is-on {
   color: var(--accent);
 }

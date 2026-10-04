@@ -12,6 +12,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 
 let cfg: typeof import("../src/config.js")
+let syncMod: typeof import("../src/sync.js")
 let configHome: string
 
 const legacyTargets = [
@@ -40,6 +41,7 @@ beforeAll(async () => {
   configHome = mkdtempSync(join(tmpdir(), "foxhop-migrate-"))
   process.env.XDG_CONFIG_HOME = configHome
   cfg = await import("../src/config.js")
+  syncMod = await import("../src/sync.js")
 })
 
 describe("migration", () => {
@@ -88,7 +90,9 @@ describe("migration", () => {
       "#!/bin/bash\n# @foxhop.generated\n",
     )
 
-    cfg.readConfig()
+    // The migration reports through a callback; the caller regenerates the
+    // scripts, mirroring what cli.ts and host.ts pass in production.
+    cfg.readConfig(() => syncMod.sync("/usr/bin/node", "/opt/foxhop/cli.js"))
 
     const scripts = () =>
       readdirSync(dir)
