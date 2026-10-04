@@ -17,5 +17,8 @@
   "categories": [
     "tabs"
   ],
-  "tags": []
+  "tags": [],
+  "support_email": {
+    "en-US": "support@kud.io"
+  }
 }

@@ -36,7 +36,8 @@ const localListing = () => ({
   name: { "en-US": "Fox Hop" },
   summary: { "en-US": "Focus a specific Firefox tab on command" },
   description: {
-    "en-US": 'Focus <a href="https://github.com/kud/foxhop">github.com/kud/foxhop</a> & more',
+    "en-US":
+      'Focus <a href="https://github.com/kud/foxhop">github.com/kud/foxhop</a> & more',
   },
   homepage: null,
   support_url: { "en-US": "https://github.com/kud/foxhop" },
@@ -45,7 +46,12 @@ const localListing = () => ({
 })
 
 describe("createJwt", () => {
-  const args = { issuer: "user:1:2", secret: "s3cret", nowMs: 1_700_000_000_123, jti: "fixed-jti" }
+  const args = {
+    issuer: "user:1:2",
+    secret: "s3cret",
+    nowMs: 1_700_000_000_123,
+    jti: "fixed-jti",
+  }
 
   it("emits a verifiable HS256 token with exp = iat + 60", () => {
     const token = createJwt(args)
@@ -94,6 +100,8 @@ describe("diffListing", () => {
           )
           .replaceAll("&", "&amp;"),
       },
+      homepage: { url: listing.homepage, outgoing: listing.homepage },
+      support_email: listing.support_email,
     }
     expect(diffListing(listing, live)).toEqual([])
   })
@@ -105,18 +113,24 @@ describe("diffListing", () => {
     )
     expect(changed).toHaveLength(1)
     expect(changed[0].field).toBe("name")
-    expect(buildListingPatch(changed)).toEqual({ name: { "en-US": "Fox Hop 2" } })
+    expect(buildListingPatch(changed)).toEqual({
+      name: { "en-US": "Fox Hop 2" },
+    })
   })
 
   it("detects category and tag changes, ignores order", () => {
     const live = { ...liveAddon(), tags: ["b", "a"] }
-    expect(diffListing({ ...localListing(), tags: ["a", "b"] }, live)).toEqual([])
+    expect(diffListing({ ...localListing(), tags: ["a", "b"] }, live)).toEqual(
+      [],
+    )
     const changed = diffListing({ ...localListing(), tags: ["a"] }, live)
     expect(changed.map((entry) => entry.field)).toEqual(["tags"])
   })
 
   it("treats null and { en-US: null } homepages as equal", () => {
-    expect(diffListing({ ...localListing(), homepage: null }, liveAddon())).toEqual([])
+    expect(
+      diffListing({ ...localListing(), homepage: null }, liveAddon()),
+    ).toEqual([])
   })
 
   it("follows the nested support_url { url, outgoing } shape", () => {
@@ -125,7 +139,9 @@ describe("diffListing", () => {
       homepage: null,
       support_url: {
         url: { "en-US": "https://github.com/kud/foxhop" },
-        outgoing: { "en-US": "https://prod.outgoing.../https%3A//github.com/kud/foxhop" },
+        outgoing: {
+          "en-US": "https://prod.outgoing.../https%3A//github.com/kud/foxhop",
+        },
       },
     }
     expect(diffListing(localListing(), live)).toEqual([])
@@ -134,7 +150,9 @@ describe("diffListing", () => {
 
 describe("planPreviewSync", () => {
   it("skips sync when there are no local screenshots", () => {
-    expect(planPreviewSync([], [{ id: 7, caption: { "en-US": "old" } }])).toEqual({
+    expect(
+      planPreviewSync([], [{ id: 7, caption: { "en-US": "old" } }]),
+    ).toEqual({
       inSync: true,
       deletes: [],
       uploads: [],
@@ -171,7 +189,10 @@ describe("planRequests", () => {
     guid: "foxhop@kud.io",
     only: ["listing", "icon", "previews"],
     iconPath: null as string | null,
-    previewPlan: { deletes: [] as number[], uploads: [] as { file: string; caption: string | null }[] },
+    previewPlan: {
+      deletes: [] as number[],
+      uploads: [] as { file: string; caption: string | null }[],
+    },
   }
 
   it("emits nothing when there is nothing to send", () => {
@@ -188,11 +209,29 @@ describe("planRequests", () => {
         uploads: [{ file: "a.png", caption: "A" }],
       },
     })
-    expect(requests.map((request) => [request.method, request.url, request.kind])).toEqual([
-      ["PATCH", "https://addons.mozilla.org/api/v5/addons/addon/foxhop@kud.io/", "json"],
-      ["PATCH", "https://addons.mozilla.org/api/v5/addons/addon/foxhop@kud.io/", "icon"],
-      ["DELETE", "https://addons.mozilla.org/api/v5/addons/addon/foxhop@kud.io/previews/3/", "delete"],
-      ["POST", "https://addons.mozilla.org/api/v5/addons/addon/foxhop@kud.io/previews/", "preview"],
+    expect(
+      requests.map((request) => [request.method, request.url, request.kind]),
+    ).toEqual([
+      [
+        "PATCH",
+        "https://addons.mozilla.org/api/v5/addons/addon/foxhop@kud.io/",
+        "json",
+      ],
+      [
+        "PATCH",
+        "https://addons.mozilla.org/api/v5/addons/addon/foxhop@kud.io/",
+        "icon",
+      ],
+      [
+        "DELETE",
+        "https://addons.mozilla.org/api/v5/addons/addon/foxhop@kud.io/previews/3/",
+        "delete",
+      ],
+      [
+        "POST",
+        "https://addons.mozilla.org/api/v5/addons/addon/foxhop@kud.io/previews/",
+        "preview",
+      ],
     ])
     expect(requests[0].body).toEqual({ summary: { "en-US": "new" } })
     for (const request of requests) {
@@ -216,9 +255,9 @@ describe("secrets", () => {
     expect(redactHeaders({ Authorization: "JWT abc.def.ghi" })).toEqual({
       Authorization: "JWT <redacted>",
     })
-    expect(redactSecrets("got 401 with s3cret here", ["s3cret", undefined])).toBe(
-      "got 401 with <redacted> here",
-    )
+    expect(
+      redactSecrets("got 401 with s3cret here", ["s3cret", undefined]),
+    ).toBe("got 401 with <redacted> here")
   })
 })
 
@@ -251,7 +290,9 @@ describe("parseArgs", () => {
       icon: null,
       screenshots: null,
     })
-    expect(parseArgs(["--only", "previews", "--icon", "icon.png"])).toMatchObject({
+    expect(
+      parseArgs(["--only", "previews", "--icon", "icon.png"]),
+    ).toMatchObject({
       mode: "dry",
       only: ["previews"],
       icon: "icon.png",
@@ -270,24 +311,34 @@ describe("resolveInputs", () => {
 
   it("prefers flags over AMO_* env fallbacks", () => {
     expect(
-      resolveInputs({ ...flags, listing: "l.json" }, { AMO_LISTING: "e.json", AMO_GUID: "g" }),
-    ).toEqual({ listingPath: "l.json", guid: "g", iconPath: null, screenshotsDir: null })
+      resolveInputs(
+        { ...flags, listing: "l.json" },
+        { AMO_LISTING: "e.json", AMO_GUID: "g" },
+      ),
+    ).toEqual({
+      listingPath: "l.json",
+      guid: "g",
+      iconPath: null,
+      screenshotsDir: null,
+    })
   })
 
   it("fails clearly when listing or guid is missing", () => {
     expect(() => resolveInputs(flags, {})).toThrow(/--listing.*--guid/)
-    expect(() => resolveInputs({ ...flags, listing: "l.json" }, {})).toThrow(/--listing.*--guid/)
+    expect(() => resolveInputs({ ...flags, listing: "l.json" }, {})).toThrow(
+      /--listing.*--guid/,
+    )
   })
 })
 
 describe("formatApiError", () => {
   it("keeps AMO's message and labels auth problems", () => {
-    expect(formatApiError(401, JSON.stringify({ detail: "Unauthorized" }))).toContain(
-      "HTTP 401",
-    )
-    expect(formatApiError(401, JSON.stringify({ detail: "Unauthorized" }))).toContain(
-      "Unauthorized",
-    )
+    expect(
+      formatApiError(401, JSON.stringify({ detail: "Unauthorized" })),
+    ).toContain("HTTP 401")
+    expect(
+      formatApiError(401, JSON.stringify({ detail: "Unauthorized" })),
+    ).toContain("Unauthorized")
     expect(formatApiError(403, "forbidden")).toContain("permission")
     expect(
       formatApiError(400, JSON.stringify({ description: ["Too long"] })),

@@ -22,6 +22,7 @@ export const LISTING_FIELDS = [
   "description",
   "homepage",
   "support_url",
+  "support_email",
   "categories",
   "tags",
 ];
