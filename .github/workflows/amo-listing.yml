@@ -11,6 +11,8 @@ on:
 jobs:
   amo-listing:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -20,3 +22,10 @@ jobs:
         env:
           WEB_EXT_API_KEY: ${{ secrets.MOZILLA_ADDONS_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.MOZILLA_ADDONS_JWT_SECRET }}
+      - name: Record the AMO preview state
+        if: ${{ inputs.apply }}
+        run: |
+          git add webext/amo/screenshots/.amo-previews.json
+          git diff --cached --quiet && exit 0
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit --message "chore(amo): record preview state"
+          git push
