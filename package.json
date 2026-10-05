@@ -17,7 +17,7 @@
     "lint": "npm run lint -w webext",
     "dev:cli": "npm run dev -w cli",
     "dev:webext": "npm run dev -w webext",
-    "amo:listing": "npx -y @kud/amo-cli@0.1.0 listing push --listing webext/amo/listing.json --guid foxhop@kud.io --icon assets/icons/foxhop-128.png --screenshots webext/amo/screenshots",
+    "amo:listing": "npx -y @kud/amo-cli@0.1.1 listing push --listing webext/amo/listing.json --guid foxhop@kud.io --icon assets/icons/foxhop-128.png --screenshots webext/amo/screenshots",
     "sign:listed": "npm run sign:listed -w webext",
     "sign:self": "npm run sign:self -w webext",
     "publish:webext": "npm run publish -w webext",

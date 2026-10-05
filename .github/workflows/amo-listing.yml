@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
-      - run: npx -y @kud/amo-cli@0.1.0 listing push --listing webext/amo/listing.json --guid foxhop@kud.io --icon assets/icons/foxhop-128.png --screenshots webext/amo/screenshots ${{ inputs.apply && '--apply' || '' }}
+      - run: npx -y @kud/amo-cli@0.1.1 listing push --listing webext/amo/listing.json --guid foxhop@kud.io --icon assets/icons/foxhop-128.png --screenshots webext/amo/screenshots ${{ inputs.apply && '--apply' || '' }}
         env:
           WEB_EXT_API_KEY: ${{ secrets.MOZILLA_ADDONS_JWT_ISSUER }}
           WEB_EXT_API_SECRET: ${{ secrets.MOZILLA_ADDONS_JWT_SECRET }}
