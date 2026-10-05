@@ -28,4 +28,5 @@ jobs:
           git add webext/amo/screenshots/.amo-previews.json
           git diff --cached --quiet && exit 0
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit --message "chore(amo): record preview state"
+          git pull --rebase --quiet
           git push

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "previews": [
+    {
+      "id": 418932,
+      "file": "0-banner.png",
+      "sha256": "095d0db4e7592aebf5a2920c04a2e851ce43ae55b9ffc0d77a2f8a9df0a392fc",
+      "caption": null
+    },
+    {
+      "id": 418933,
+      "file": "1-popup.png",
+      "sha256": "10f642d8d80bf7d0918520c497614b34e454271ec217cfd2c865b31277cc20dd",
+      "caption": null
+    }
+  ]
+}
