@@ -12,6 +12,6 @@ jobs:
     uses: kud/webext/.github/workflows/release-extension.yml@main
     with:
       root: webext
-      ignore-files: publish.sh amo amo/**
+      ignore-files: publish.sh amo amo/** preview preview/**
       icon: assets/icons/foxhop-128.png
     secrets: inherit

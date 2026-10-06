@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fox Hop popup preview frame</title>
+  </head>
+  <body>
+    <script>
+      // Loads the real popup.html with the browser shim in front of popup.js.
+      // ?fixture=<name> picks the data; ?scheme=light|dark pins the colour
+      // scheme by rewriting the popup's own prefers-color-scheme rules, so the
+      // preview never carries a copy of its CSS.
+      const params = new URLSearchParams(location.search)
+      const scheme = params.get("scheme") === "dark" ? "dark" : "light"
+      const popupDir = new URL("../src/popup/", location.href)
+      const shimUrl = new URL("browser-shim.js", location.href)
+
+      const pinScheme = (css) =>
+        css
+          .replace(
+            /\(prefers-color-scheme:\s*dark\)/g,
+            scheme === "dark" ? "(min-width: 0px)" : "(min-width: 99999px)",
+          )
+          .replace(/color-scheme:\s*light dark/g, `color-scheme: ${scheme}`)
+
+      const inlineStylesheets = async (html) => {
+        const links = [...html.matchAll(/<link\s+rel="stylesheet"\s+href="([^"]+)"\s*\/?>/g)]
+        let result = html
+        for (const [tag, href] of links) {
+          const css = await (await fetch(new URL(href, popupDir))).text()
+          result = result.replace(tag, `<style>${pinScheme(css)}</style>`)
+        }
+        return result
+      }
+
+      const load = async () => {
+        const html = await (await fetch(new URL("popup.html", popupDir))).text()
+        const withStyles = await inlineStylesheets(html)
+        const injected = `<head><base href="${popupDir.href}" /><script src="${shimUrl.href}"><\/script>`
+        document.open()
+        document.write(withStyles.replace("<head>", injected))
+        document.close()
+      }
+
+      load()
+    </script>
+  </body>
+</html>

@@ -76,6 +76,17 @@ cd webextension && npm run dev  # launch Firefox Nightly with the extension load
 cd webextension && npm run lint # web-ext lint
 ```
 
+### Popup preview
+
+The real popup runs on fixture data in any static server, no build step. From the repo root:
+
+```sh
+npx serve webext
+# open http://localhost:3000/preview/ (the port is printed)
+```
+
+`webext/preview/` renders `src/popup/popup.html` once per fixture in `preview/fixtures/`, light and dark. `browser-shim.js` stands in for the `browser` API; clicks change state in memory only and writes are logged to the console. `vercel.json` serves `webext/` as-is for hosting.
+
 ## Updating the AMO listing
 
 The public add-on page (name, summary, description, icon, screenshots) is managed

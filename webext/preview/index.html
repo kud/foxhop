@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Fox Hop popup preview</title>
+    <style>
+      :root {
+        --page-bg: #f3f3f5;
+        --page-fg: #1b1b1f;
+        --page-muted: #62626b;
+        --page-line: #d6d6dc;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --page-bg: #17171a;
+          --page-fg: #ececf0;
+          --page-muted: #9a9aa5;
+          --page-line: #34343b;
+        }
+      }
+      body {
+        margin: 0;
+        padding: 32px 16px 64px;
+        background: var(--page-bg);
+        color: var(--page-fg);
+        font: 14px/1.5 system-ui, sans-serif;
+      }
+      main { max-width: 1000px; margin: 0 auto; }
+      h1 { margin: 0 0 4px; font-size: 22px; }
+      h2 { margin: 40px 0 12px; font-size: 16px; }
+      p { margin: 0; color: var(--page-muted); }
+      .pair { display: flex; flex-wrap: wrap; gap: 24px; }
+      figure { margin: 0; }
+      figcaption { margin-bottom: 8px; font-size: 12px; color: var(--page-muted); }
+      iframe {
+        display: block;
+        width: 360px;
+        height: 520px;
+        border: 1px solid var(--page-line);
+        border-radius: 8px;
+        background: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Fox Hop popup</h1>
+      <p>
+        The real popup, running on fixture data. Clicks change state in memory only; writes
+        are logged to each frame's console.
+      </p>
+      <div id="gallery"></div>
+    </main>
+    <script>
+      const fixtures = [
+        ["empty", "Empty: connected, nothing saved yet"],
+        ["typical", "Typical: favourites and open tabs"],
+        ["long", "Long: many targets, long titles and hosts"],
+      ]
+      const gallery = document.getElementById("gallery")
+      for (const [name, label] of fixtures) {
+        const section = document.createElement("section")
+        section.innerHTML = `<h2>${label}</h2><div class="pair"></div>`
+        for (const scheme of ["light", "dark"]) {
+          const figure = document.createElement("figure")
+          figure.innerHTML = `<figcaption>${name} / ${scheme}</figcaption>`
+          const frame = document.createElement("iframe")
+          frame.src = `frame.html?fixture=${name}&scheme=${scheme}`
+          frame.title = `${name} fixture, ${scheme}`
+          figure.append(frame)
+          section.querySelector(".pair").append(figure)
+        }
+        gallery.append(section)
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,167 @@
+{
+  "description": "Seventeen targets, long titles and hosts, a mix of open and closed",
+  "connected": true,
+  "targets": [
+    {
+      "name": "mail",
+      "title": "Mail",
+      "match": "mail.example.com",
+      "url": "https://mail.example.com/",
+      "favorite": true
+    },
+    {
+      "name": "calendar",
+      "title": "Calendar",
+      "match": "calendar.example.com",
+      "url": "https://calendar.example.com/",
+      "favorite": true
+    },
+    {
+      "name": "notes",
+      "title": "Notes",
+      "match": "notes.example.com",
+      "url": "https://notes.example.com/",
+      "favorite": false
+    },
+    {
+      "name": "chat",
+      "title": "Chat",
+      "match": "chat.example.com",
+      "url": "https://chat.example.com/",
+      "favorite": false
+    },
+    {
+      "name": "music",
+      "title": "Music",
+      "match": "music.example.com",
+      "url": "https://music.example.com/",
+      "favorite": false
+    },
+    {
+      "name": "docs",
+      "title": "Docs",
+      "match": "docs.example.com",
+      "url": "https://docs.example.com/",
+      "favorite": false
+    },
+    {
+      "name": "quarterly-planning-workspace-overview",
+      "title": "Quarterly planning workspace overview for the whole team",
+      "match": "planning.workspace.internal-tools.example.org",
+      "url": "https://planning.workspace.internal-tools.example.org/",
+      "favorite": true
+    },
+    {
+      "name": "shared-reading-list",
+      "title": "Shared reading list",
+      "match": "reading.example.net",
+      "url": "https://reading.example.net/"
+    },
+    {
+      "name": "archive-of-old-project-notes-and-references",
+      "title": "Archive of old project notes and references",
+      "match": "archive.example.com",
+      "url": "https://archive.example.com/"
+    },
+    {
+      "name": "status",
+      "title": "Status",
+      "match": "status.example.org",
+      "url": "https://status.example.org/"
+    },
+    {
+      "name": "wiki",
+      "title": "Wiki",
+      "match": "wiki.example.net",
+      "url": "https://wiki.example.net/"
+    },
+    {
+      "name": "tasks",
+      "title": "Tasks",
+      "match": "tasks.example.com",
+      "url": "https://tasks.example.com/"
+    },
+    {
+      "name": "photos",
+      "title": "Photos",
+      "match": "photos.example.org",
+      "url": "https://photos.example.org/"
+    },
+    {
+      "name": "maps",
+      "title": "Maps",
+      "match": "maps.example.net",
+      "url": "https://maps.example.net/"
+    },
+    {
+      "name": "recipes",
+      "title": "Recipes",
+      "match": "recipes.example.com",
+      "url": "https://recipes.example.com/"
+    },
+    {
+      "name": "weather",
+      "title": "Weather",
+      "match": "weather.example.org",
+      "url": "https://weather.example.org/"
+    },
+    {
+      "name": "podcasts",
+      "title": "Podcasts",
+      "match": "podcasts.example.net",
+      "url": "https://podcasts.example.net/"
+    },
+    {
+      "name": "bookmarks",
+      "title": "Bookmarks",
+      "match": "bookmarks.example.com",
+      "url": "https://bookmarks.example.com/"
+    }
+  ],
+  "tabs": [
+    {
+      "id": 1,
+      "windowId": 1,
+      "index": 1,
+      "url": "https://mail.example.com/",
+      "title": "Mail",
+      "favIconUrl": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%232f6fdb%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2222.5%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22700%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%3EM%3C%2Ftext%3E%3C%2Fsvg%3E"
+    },
+    {
+      "id": 2,
+      "windowId": 1,
+      "index": 2,
+      "url": "https://calendar.example.com/",
+      "title": "Calendar",
+      "favIconUrl": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%23d9552b%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2222.5%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22700%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%3EC%3C%2Ftext%3E%3C%2Fsvg%3E"
+    },
+    {
+      "id": 3,
+      "windowId": 1,
+      "index": 3,
+      "url": "https://notes.example.com/",
+      "title": "Notes",
+      "favIconUrl": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%23b8860b%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2222.5%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22700%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%3EN%3C%2Ftext%3E%3C%2Fsvg%3E"
+    },
+    {
+      "id": 4,
+      "windowId": 1,
+      "index": 4,
+      "url": "https://chat.example.com/",
+      "title": "Chat",
+      "favIconUrl": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%232a8f5b%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2222.5%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22700%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%3ET%3C%2Ftext%3E%3C%2Fsvg%3E"
+    },
+    {
+      "id": 9,
+      "windowId": 1,
+      "index": 9,
+      "url": "https://planning.workspace.internal-tools.example.org/",
+      "title": "Planning"
+    }
+  ],
+  "storage": {
+    "favicons": {
+      "docs": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%23c23a6b%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2222.5%22%20font-family%3D%22sans-serif%22%20font-size%3D%2218%22%20font-weight%3D%22700%22%20text-anchor%3D%22middle%22%20fill%3D%22%23fff%22%3ED%3C%2Ftext%3E%3C%2Fsvg%3E"
+    }
+  }
+}
