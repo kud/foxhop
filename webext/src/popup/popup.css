@@ -24,6 +24,14 @@
 
 .header .title {
   font-size: var(--text-lg);
+  margin: 0;
+  line-height: 0;
+}
+
+.header .logo {
+  display: block;
+  height: 30px;
+  width: auto;
 }
 
 .info {
