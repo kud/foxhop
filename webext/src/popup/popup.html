@@ -31,12 +31,17 @@
 
     <!-- List view -->
     <div id="view-list">
-      <button class="row-bleed action" id="add-current" type="button">
-        <span class="action-icon" aria-hidden="true">+</span>
-        <span class="action-label">Add current tab&hellip;</span>
-      </button>
+      <div class="action-bar">
+        <button class="row-bleed action" id="add-current" type="button">
+          <span class="action-icon" aria-hidden="true">+</span>
+          <span class="action-label">Add current tab&hellip;</span>
+        </button>
+      </div>
 
-      <div class="section"><span class="section-title">Targets</span></div>
+      <div class="section">
+        <span class="section-title">Targets</span>
+        <p class="hint add-status" id="add-status" aria-live="polite" hidden></p>
+      </div>
 
       <div class="search">
         <input
@@ -49,7 +54,6 @@
       </div>
 
       <ul class="list" id="list"></ul>
-      <p class="hint add-status" id="add-status" aria-live="polite" hidden></p>
       <p class="state" id="state" hidden></p>
     </div>
 
@@ -84,7 +88,7 @@
         existing tab instead of opening another. The URL must fall within Match.
       </p>
       <div class="editor-actions">
-        <button type="button" class="btn" id="editor-cancel">Cancel</button>
+        <button type="button" class="btn btn-ghost" id="editor-cancel">Cancel</button>
         <button type="submit" class="btn btn-primary">Save</button>
       </div>
     </form>

@@ -180,7 +180,7 @@ const renderRow = (target) => {
   }
   main.append(icon, text)
   main.addEventListener("click", () => focus(target))
-  row.append(main, fav, edit, remove)
+  row.append(main, edit, remove, fav)
   return row
 }
 
@@ -292,6 +292,7 @@ const showAddStatus = (text) => {
   addStatusTimer = setTimeout(() => {
     addStatusEl.hidden = true
     addStatusEl.textContent = ""
+    addStatusEl.classList.remove("is-created")
   }, 2500)
 }
 
@@ -311,6 +312,7 @@ const reportAdd = (ack) => {
   }
   let text = ack.created ? `Added ${title}` : `${title} is already saved`
   if (!ack.created && ack.urlChanged) text += " — link updated"
+  addStatusEl.classList.toggle("is-created", ack.created)
   showAddStatus(text)
 }
 

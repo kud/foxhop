@@ -1,4 +1,4 @@
-/* @kud/webext-ui — webext-ui.css v0.2.0
+/* @kud/webext-ui — webext-ui.css v0.3.0
  *
  * Vendored file. Do not edit here — edit it upstream and re-run
  * `npx @kud/webext-ui@latest sync src/vendor/`.
@@ -243,15 +243,27 @@ body {
   margin-top: 0;
 }
 
-/* Edge-to-edge list row for the full-bleed archetype. Works as a container
-   (<li>) or, with no children to lay out, directly on a <button>. */
+/* Nova menu items carry no separators, and a border-top on a rounded row
+   curves into its corners. Inset rows are spaced by their own padding. */
+.rows-divided > .row-bleed {
+  border-top: 0;
+}
+
+/* List row for the full-bleed archetype, shaped as a Nova menu item: inset
+   8px from the popup edge with a rounded highlight. The 8px margin plus 8px
+   padding keeps the text 16px from the edge, where it always was. Works as a
+   container (<li>) or, with no children to lay out, directly on a <button>. */
 .row-bleed {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  width: 100%;
-  padding: var(--space-2) var(--space-4);
+  margin: 0 var(--space-2);
+  /* Not auto: a <button> shrinks to fit its label under auto and wraps
+     "Add current tab…" onto two lines. */
+  width: calc(100% - var(--space-2) * 2);
+  padding: var(--space-2);
   border: none;
+  border-radius: var(--radius-xl);
   background: transparent;
   color: var(--fg);
   font: inherit;
@@ -266,10 +278,9 @@ button.row-bleed {
   cursor: pointer;
 }
 
-/* Inset, because a full-width row touches the popup edge and an outset ring
-   loses its left and right sides outside the viewport. */
+/* Outset: the row sits inset from the popup edge, so the ring clears it. */
 .row-bleed:focus-visible {
-  outline-offset: calc(var(--focus-ring-width) * -1);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* The primary action of a row, when the row also carries secondary buttons.
@@ -314,7 +325,7 @@ button.row-bleed {
 .list {
   list-style: none;
   margin: 0;
-  padding: 0 0 var(--space-2);
+  padding: var(--space-1) 0 var(--space-2);
   max-height: var(--list-max-height, 340px);
   overflow-y: auto;
 }
@@ -336,61 +347,60 @@ button.row-bleed {
 
 /* ── buttons ────────────────────────────────────────────────────────────── */
 
-/* .btn is the neutral bordered button. .btn-primary fills it with the accent,
-   .btn-block makes it full width. The fleet disagreed about which of these
-   .btn meant on its own; naming all three settles it. */
+/* .btn is a neutral tinted pill, .btn-primary an accent tint with --fg text,
+   .btn-ghost transparent. .btn-block makes it full width. */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   min-height: var(--control-height);
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-md);
-  background: var(--bg);
+  padding: var(--space-1) var(--space-4);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
   color: var(--fg);
-  font: 500 var(--text-base) / var(--line-tight) var(--font-sans);
+  font: 600 var(--text-base) / var(--line-tight) var(--font-sans);
   cursor: pointer;
   transition: background var(--dur-fast) var(--ease);
 }
 
 .btn:hover:not(:disabled) {
-  background: var(--hover);
+  background: color-mix(in srgb, var(--fg) 14%, transparent);
 }
 
-/* --muted, not --faint. Disabled controls are WCAG-exempt, so --faint at
-   2.73:1 was not a failure — but 5.74:1 costs a token swap and the label
-   becomes readable. */
+/* --muted on --hover, not --faint. Disabled controls are WCAG-exempt, but
+   5.72:1 costs a token swap and the label becomes readable. --border is too
+   firm a fill for this: muted on it is 3.81:1. */
 .btn:disabled {
   border-color: var(--border);
-  background: var(--border);
+  background: var(--hover);
   color: var(--muted);
   cursor: default;
 }
 
 .btn-primary {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-fg);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 20%, var(--bg));
+  color: var(--fg);
 }
 
-/* Hover mixes the fill away from --accent-fg, so the pair only ever gains
-   contrast. brightness(1.08) took white-on-blue from 4.51 to 3.94:1, and on
-   a near-black accent it moved nothing you could see. */
 .btn-primary:hover:not(:disabled) {
-  --accent-hover: color-mix(
-    in oklab,
-    var(--accent) 86%,
-    rgb(from var(--accent-fg) calc(255 - r) calc(255 - g) calc(255 - b))
-  );
-  border-color: var(--accent-hover);
-  background: var(--accent-hover);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 32%, var(--bg));
+}
+
+.btn-ghost {
+  background: transparent;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--hover);
 }
 
 .btn-primary:disabled {
   border-color: var(--border);
-  background: var(--border);
+  background: var(--hover);
   color: var(--muted);
   filter: none;
 }
@@ -404,9 +414,9 @@ button.row-bleed {
 .btn-icon {
   flex: none;
   min-height: 0;
-  padding: var(--space-1);
+  padding: 6px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--muted);
   font-size: var(--text-base);
@@ -415,7 +425,7 @@ button.row-bleed {
 }
 
 .btn-icon:hover {
-  background: var(--border);
+  background: var(--hover);
   color: var(--fg);
 }
 
@@ -433,12 +443,18 @@ button.row-bleed {
 ) {
   width: 100%;
   min-height: var(--control-height);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-1) var(--space-3);
   border: 1px solid var(--border-control);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--bg);
   color: var(--fg);
   font: var(--text-base) / var(--line-base) var(--font-sans);
+}
+
+/* Search keeps the 12px field radius and grows taller to clear its icon. */
+:where(input[type="search"]) {
+  min-height: 36px;
+  padding-inline: var(--space-4);
 }
 
 :where(input, select, textarea)::placeholder {
@@ -606,8 +622,8 @@ button.row-bleed {
 }
 
 /* --bg as the text colour flips correctly with the theme: white on the dark
-   green in light mode (5.44:1), ink on the light green in dark mode (8.72:1).
-   White in both would measure 1.96:1 against the dark-mode green. */
+   green in light mode (6.89:1), ink on the light green in dark mode (12.08:1).
+   White in both would measure 1.5:1 against the dark-mode green. */
 .badge-success {
   border-color: var(--success);
   background: var(--success);

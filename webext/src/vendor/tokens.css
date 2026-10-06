@@ -1,4 +1,4 @@
-/* @kud/webext-ui — tokens.css v0.2.0
+/* @kud/webext-ui — tokens.css v0.3.0
  *
  * Vendored file. Do not edit here — edit it upstream and re-run
  * `npx @kud/webext-ui@latest sync src/vendor/`. Grep the version above
@@ -6,6 +6,12 @@
  *
  * Every colour pair below is contrast-checked. The figures in comments are
  * computed WCAG 2.1 ratios, not estimates.
+ *
+ * The scale follows Firefox's Nova design (mozilla-firefox/firefox@913f1b0,
+ * toolkit/themes/shared/design-system/dist/tokens-shared.css). Values are
+ * copied, not referenced: an extension page cannot see the browser's custom
+ * properties. Each one names the Firefox token it copies. Where a Firefox value
+ * fails WCAG it is deliberately not copied, and the comment says so.
  *
  * An extension overrides --accent and --accent-fg (together, always) in its
  * own stylesheet. Everything else is the shared scale and should not be
@@ -15,15 +21,16 @@
 :root {
   color-scheme: light dark;
 
-  /* Surfaces and text. These seven values were already identical, byte for
-     byte, in four extensions — they are recorded here rather than chosen. */
-  --bg: #ffffff;
-  --fg: #1c1b22;
-  --muted: #5b5b66; /* 6.70:1 on --bg — the lightest colour text may use */
-  --faint: #8f8f9d; /* 3.19:1 on --bg — NON-TEXT ONLY: icons, dividers, disabled */
-  --hover: #f5f5f7;
-  --border: #ededf0; /* 1.17:1 on --bg — a divider, never a control edge */
-  --border-control: #8f8f9d; /* 3.19:1 on --bg — meets WCAG 1.4.11 for control edges */
+  /* Surfaces and text. */
+  --bg: #ffffff; /* --background-color-box (light) */
+  --fg: #180e30; /* --text-color: violet-desaturated-90. 18.35:1 on --bg */
+  --muted: #605970; /* --text-color-deemphasized, fg at 69% baked to hex. 6.64:1 on --bg — the lightest colour text may use */
+  --faint: #817f84; /* gray-45 = --border-color-interactive. 3.96:1 on --bg — NON-TEXT ONLY: icons, dividers, disabled */
+  --hover: #efedf2; /* gray-10. fg 15.79:1 */
+  --border: #ededf0; /* A divider, never a control edge */
+  /* Firefox's own input border (gray-30, 2.02:1) fails WCAG 1.4.11, so the
+     control edge takes the interactive border instead. */
+  --border-control: #817f84; /* gray-45 = --border-color-interactive. 3.96:1 on --bg */
 
   /* Product identity. Override this pair per extension; the default is the
      orange shared by foxhop and smoothgpt. --accent-fg is whatever reaches
@@ -31,10 +38,10 @@
   --accent: #f0560e;
   --accent-fg: #1c1b22; /* 4.92:1 on --accent. White would be 3.48:1 and fail. */
 
-  /* Feedback. Both greens found in the fleet (#1e8e3e 4.21:1, #27ae60 2.87:1)
-     fail AA as text, so --success is introduced rather than derived. */
-  --success: #017a40; /* 5.44:1 on --bg */
-  --danger: #d70022; /* 5.37:1 on --bg */
+  /* Feedback. Firefox's green-50 (#008865) is 4.46:1 as text and misses AA,
+     so --success takes the next step down. */
+  --success: #06674b; /* green-60. 6.89:1 on --bg */
+  --danger: #c52d4f; /* red-50 = --text-color-error. 5.44:1 on --bg */
 
   /* Focus. No precedent existed anywhere in the fleet; this is invented.
      The ring is the accent, offset so it clears an accent-filled control and
@@ -66,17 +73,15 @@
   --line-loose: 1.6;
 
   /* Radii. */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  --radius-sm: 4px; /* --border-radius-xsmall */
+  --radius-md: 8px; /* --border-radius-small */
+  --radius-lg: 12px; /* --border-radius-medium = --input-text-border-radius */
+  --radius-xl: 16px; /* --border-radius-large = --panel-menuitem-border-radius */
   --radius-pill: 999px;
 
-  /* Sizing. --control-height fell out of the arithmetic rather than being
-     picked: an input at 8px/12px with 14px/1.4 text and a 1px border computes
-     to 37.6px, a button at 8px/16px lands in the same place, and the toggle
-     track was already 38px wide. */
-  --control-height: 38px;
+  /* Sizing. Nova controls are 32px tall; a button at 4px/16px padding with
+     14px/1.2 text lands there, as does a pill-shaped input. */
+  --control-height: 32px; /* --button-min-height = --size-item-large */
   --popup-narrow: 260px;
   --popup-wide: 360px;
 
@@ -88,18 +93,18 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1c1b22;
-    --fg: #fbfbfe;
-    --muted: #b1b1bd; /* 8.05:1 on --bg */
-    --faint: #8f8f9d; /* 5.36:1 — still non-text only, for consistency of meaning */
-    --hover: #2b2a33;
-    --border: #2b2a33;
-    --border-control: #8f8f9d; /* 5.36:1 on --bg */
+    --bg: #171519; /* --background-color-box (dark): gray-80 */
+    --fg: #f2f0f8; /* violet-desaturated-0. 16.06:1 on --bg */
+    --muted: #aeacb3; /* fg at 69% baked. 8.08:1 on --bg */
+    --faint: #949297; /* gray-40 = --border-color-interactive. 5.89:1 — still non-text only, for consistency of meaning */
+    --hover: #312f33; /* gray-65. fg 11.73:1 */
+    --border: #2b292e; /* A divider, never a control edge */
+    --border-control: #949297; /* 5.89:1 on --bg */
 
     --accent: #ff9a3d;
     --accent-fg: #1c1b22; /* 8.09:1 on --accent */
 
-    --success: #81c995; /* 8.72:1 on --bg */
-    --danger: #ff6b6b; /* 6.16:1 on --bg */
+    --success: #90e3c6; /* green-20. 12.08:1 on --bg */
+    --danger: #ffb6bf; /* red-20. 10.97:1 on --bg */
   }
 }

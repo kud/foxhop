@@ -36,7 +36,12 @@
 
 .info {
   position: absolute;
-  right: var(--space-3);
+  right: var(--space-2);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-pill);
   color: var(--muted);
   text-decoration: none;
   font-size: 16px;
@@ -44,11 +49,18 @@
 
 .info:hover {
   color: var(--fg);
+  background: var(--hover);
 }
 
 /* ── the "add current tab" action ───────────────────────────────────────── */
 
 .action {
+  border-bottom: none;
+}
+
+/* The divider lives on the wrapper so it stays straight and full-width. */
+.action-bar {
+  padding: var(--space-1) 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -72,6 +84,10 @@
 /* ── list chrome ────────────────────────────────────────────────────────── */
 
 .section {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
   padding: var(--space-3) var(--space-4) var(--space-1);
 }
 
@@ -79,8 +95,19 @@
   padding: 0 var(--space-4) var(--space-2);
 }
 
+.list {
+  padding-block: var(--space-2);
+  mask-image: linear-gradient(
+    transparent,
+    #000 var(--space-2),
+    #000 calc(100% - var(--space-2)),
+    transparent
+  );
+}
+
 /* ── row icons ──────────────────────────────────────────────────────────── */
 
+/* The icon keeps its corner: 8px on 24px reads as a blob, so 6px here. */
 /* The background is set inline by popup.js from a hue generated per target.
    White is safe against every hue in that range only because the generated
    lightness is capped — see hueFor/monogram in popup.js. */
@@ -90,7 +117,7 @@
   height: 24px;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   background: var(--accent);
   color: #fff;
   font-size: var(--text-sm);
@@ -102,7 +129,7 @@
   flex: 0 0 24px;
   width: 24px;
   height: 24px;
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   object-fit: contain;
 }
 
@@ -123,7 +150,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--fg);
+  background: var(--muted);
   box-shadow: 0 0 0 2px var(--bg);
 }
 
@@ -141,8 +168,19 @@
 
 /* ── add feedback ───────────────────────────────────────────────────────── */
 
-.add-status {
-  padding: 0 var(--space-4) var(--space-2);
+.section .add-status {
+  min-height: 0;
+  padding: 0;
+  font-size: var(--text-sm);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.add-status.is-created::before {
+  content: "✓ ";
+  color: var(--success);
 }
 
 .row-bleed.is-added {
