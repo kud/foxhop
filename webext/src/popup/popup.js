@@ -162,18 +162,21 @@ const renderRow = (target) => {
     if (ack?.ok) refresh(ack.targets)
   })
 
-  main.append(iconFor(target), text)
-  // Open state is a separate shape, never a swapped icon: a filled dot when
-  // a tab is open, nothing when not, labelled for assistive tech. Presence
-  // carries the meaning, so it reads without colour.
+  const icon = document.createElement("span")
+  icon.className = "row-icon"
+  icon.append(iconFor(target))
+  // Open state is a separate shape, never a swapped icon: a badge on the
+  // icon's corner when a tab is open, nothing when not, labelled for
+  // assistive tech. Presence carries the meaning, so it reads without colour.
   if (isOpen(target)) {
     const dot = document.createElement("span")
     dot.className = "open-dot"
     dot.setAttribute("role", "img")
     dot.setAttribute("aria-label", "Open")
     dot.title = "Open"
-    main.append(dot)
+    icon.append(dot)
   }
+  main.append(icon, text)
   main.addEventListener("click", () => focus(target))
   row.append(main, fav, edit, remove)
   return row

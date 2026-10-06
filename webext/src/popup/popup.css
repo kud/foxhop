@@ -106,16 +106,29 @@
   object-fit: contain;
 }
 
-/* Open indicator: a filled dot rendered only when a tab for the target is
-   open. Presence alone carries the meaning (dot vs. nothing), so it reads
-   without colour; the label covers assistive tech. */
+.row-icon {
+  position: relative;
+  flex: 0 0 24px;
+  display: grid;
+}
+
+/* Open indicator: a badge on the icon's bottom-right corner, rendered only
+   when a tab for the target is open. Presence alone carries the meaning
+   (badge vs. nothing), so it reads without colour; the label covers
+   assistive tech. The ring is the row ground, so it tracks the hover. */
 .open-dot {
-  flex: 0 0 6px;
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
   width: 6px;
   height: 6px;
-  align-self: center;
   border-radius: 50%;
   background: var(--fg);
+  box-shadow: 0 0 0 2px var(--bg);
+}
+
+.row-bleed:hover .open-dot {
+  box-shadow: 0 0 0 2px var(--hover);
 }
 
 .fav.is-on {
