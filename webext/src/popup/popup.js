@@ -4,6 +4,7 @@ const listEl = document.getElementById("list")
 const stateEl = document.getElementById("state")
 const searchEl = document.getElementById("search")
 const addEl = document.getElementById("add-current")
+const addStatusEl = document.getElementById("add-status")
 const viewList = document.getElementById("view-list")
 const viewWarning = document.getElementById("view-warning")
 const editor = document.getElementById("editor")
@@ -128,6 +129,7 @@ const rowButton = (cls, glyph, label, onClick) => {
 const renderRow = (target) => {
   const row = document.createElement("li")
   row.className = "row-bleed"
+  row.dataset.name = target.name
 
   // The row's primary action is a real button rather than a click listener on
   // the <li>. A bare list item is not in the tab order, so the main action of
@@ -275,9 +277,42 @@ addEl.addEventListener("click", async () => {
   const ack = await send({ type: "add", url: tab.url, title: tab.title }).catch(
     () => null,
   )
-  if (ack?.ok) refresh(ack.targets)
-  else showState("Couldn't add the current tab.")
+  if (ack?.ok) {
+    refresh(ack.targets)
+    reportAdd(ack)
+  } else showState("Couldn't add the current tab.")
 })
+
+let addStatusTimer = 0
+
+const showAddStatus = (text) => {
+  addStatusEl.textContent = text
+  addStatusEl.hidden = false
+  clearTimeout(addStatusTimer)
+  addStatusTimer = setTimeout(() => {
+    addStatusEl.hidden = true
+    addStatusEl.textContent = ""
+  }, 2500)
+}
+
+// After an add, scroll the landing row into view with a brief flash and a
+// transient status line. An older host replies without name/created, and then
+// there is nothing to point at, so the add just refreshes as before.
+const reportAdd = (ack) => {
+  if (ack?.name == null || typeof ack?.created !== "boolean") return
+  const added = (ack.targets ?? []).find((target) => target.name === ack.name)
+  const title = added?.title ?? ack.name
+  const row = listEl.querySelector(`[data-name="${CSS.escape(ack.name)}"]`)
+  if (row) {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    row.scrollIntoView({ block: "nearest", ...(reduced ? {} : { behavior: "smooth" }) })
+    row.classList.add("is-added")
+    setTimeout(() => row.classList.remove("is-added"), 1000)
+  }
+  let text = ack.created ? `Added ${title}` : `${title} is already saved`
+  if (!ack.created && ack.urlChanged) text += " — link updated"
+  showAddStatus(text)
+}
 
 searchEl.addEventListener("input", render)
 

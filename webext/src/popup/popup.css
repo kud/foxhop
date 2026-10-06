@@ -139,6 +139,33 @@
   color: var(--danger);
 }
 
+/* ── add feedback ───────────────────────────────────────────────────────── */
+
+.add-status {
+  padding: 0 var(--space-4) var(--space-2);
+}
+
+.row-bleed.is-added {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  animation: row-added-flash 1s var(--ease) forwards;
+}
+
+@keyframes row-added-flash {
+  from {
+    background: color-mix(in srgb, var(--accent) 32%, transparent);
+  }
+
+  to {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-bleed.is-added {
+    animation: none;
+  }
+}
+
 /* ── editor ─────────────────────────────────────────────────────────────── */
 
 .editor {

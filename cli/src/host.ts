@@ -41,6 +41,8 @@ export const handleConfigMutation = (request: ConfigRequest) => {
       const { targets: current } = readConfig(resync)
       const name = nameForAdd(current, { title, match: derived.match })
       const existing = findTarget({ targets: current }, name)
+      const created = !existing
+      const urlChanged = existing ? existing.url !== request.url : false
       const { targets } = upsertTarget(
         {
           ...existing,
@@ -52,7 +54,7 @@ export const handleConfigMutation = (request: ConfigRequest) => {
         resync,
       )
       resync()
-      return { ok: true, targets }
+      return { ok: true, targets, name, created, urlChanged }
     }
     case "config:upsert": {
       // An edit from the popup: it replaces an existing target and can never
