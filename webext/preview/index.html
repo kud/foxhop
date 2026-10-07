@@ -71,6 +71,15 @@
         display: grid;
         gap: 12px;
       }
+      .toolbars h3 {
+        margin: 12px 0 4px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--page-muted);
+      }
+      .toolbars h3:first-child {
+        margin-top: 0;
+      }
       .strip {
         overflow-x: auto;
       }
@@ -126,7 +135,17 @@
         gap: 12px;
         flex-wrap: wrap;
       }
-      .enlarged div {
+      .enlarged figure {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .enlarged .tiles {
+        display: flex;
+        gap: 12px;
+      }
+      .enlarged .light,
+      .enlarged .dark {
         display: grid;
         place-items: center;
         width: 128px;
@@ -139,7 +158,7 @@
       .enlarged .dark {
         background: #2b2a33;
       }
-      .enlarged img {
+      .enlarged svg {
         width: 96px;
         height: 96px;
       }
@@ -155,7 +174,7 @@
       <section>
         <h2>Toolbar icon</h2>
         <p>
-          The shipped toolbar icon between Firefox's own buttons (highlighted),
+          Each toolbar icon between Firefox's own buttons (highlighted),
           at 16px and 32px, then enlarged.
         </p>
         <svg width="0" height="0" style="position: absolute" aria-hidden="true">
@@ -210,20 +229,7 @@
         </svg>
         <div class="toolbars" id="toolbars"></div>
         <h2>Enlarged</h2>
-        <div class="enlarged">
-          <div class="light">
-            <img
-              src="../src/icons/icon-mono.svg"
-              alt="Toolbar icon for light themes"
-            />
-          </div>
-          <div class="dark">
-            <img
-              src="../src/icons/icon-mono-dark.svg"
-              alt="Toolbar icon for dark themes"
-            />
-          </div>
-        </div>
+        <div class="enlarged" id="enlarged"></div>
       </section>
       <div id="gallery"></div>
     </main>
@@ -233,26 +239,63 @@
         ["typical", "Typical: favourites and open tabs"],
         ["long", "Long: many targets, long titles and hosts"],
       ]
-      const toolbarIcon = {
-        light: "../src/icons/icon-mono.svg",
-        dark: "../src/icons/icon-mono-dark.svg",
-      }
+      const variants = [
+        ["classic", "Classic"],
+        ["leaping-fox", "Leaping fox"],
+        ["fox-head", "Fox head"],
+        ["fox-tab", "Fox and tab"],
+        ["tail-hop", "Tail hop"],
+      ]
+      // Ink pinned per strip: dark ink on the light strip, pale ink on the
+      // dark one, matching the toolbar SVGs' own colour scheme.
+      const stripInk = { light: "#15141a", dark: "#fbfbfe" }
       const firefoxGlyph = (id) =>
         `<span><svg><use href="#ff-${id}"/></svg></span>`
-      const toolbar = (scheme, retina) =>
+      // An <img> would follow the page's colour scheme, not the strip's, so
+      // the SVG text is inlined with the strip ink applied: the adaptive
+      // <style> is dropped and each inked path takes the strip colour, keeping
+      // its stroke where the art has one.
+      const inlineIcon = (svg, scheme) => {
+        const ink = stripInk[scheme]
+        const doc = new DOMParser().parseFromString(svg, "image/svg+xml")
+        doc.querySelector("style")?.remove()
+        for (const path of doc.querySelectorAll("path")) {
+          path.setAttribute("fill", ink)
+          if (path.hasAttribute("stroke-width")) path.setAttribute("stroke", ink)
+        }
+        return doc.documentElement.outerHTML
+      }
+      const toolbar = (scheme, icon, retina) =>
         `<div class="strip"><div class="toolbar ${scheme}${retina ? " retina" : ""}">` +
         firefoxGlyph("star") +
         firefoxGlyph("cloud") +
-        `<span class="ours"><img src="${toolbarIcon[scheme]}" alt="Fox Hop" /></span>` +
+        `<span class="ours">${icon}</span>` +
         firefoxGlyph("puzzle") +
         firefoxGlyph("chevrons") +
         firefoxGlyph("menu") +
         `</div></div>`
-      document.getElementById("toolbars").innerHTML =
-        toolbar("light") +
-        toolbar("dark") +
-        toolbar("light", true) +
-        toolbar("dark", true)
+      const renderToolbars = async () => {
+        const host = document.getElementById("toolbars")
+        const enlarged = document.getElementById("enlarged")
+        for (const [id, label] of variants) {
+          const svg = await (await fetch(`../src/icons/toolbar/${id}.svg`)).text()
+          const group = document.createElement("div")
+          group.innerHTML =
+            `<h3>${label}</h3>` +
+            toolbar("light", inlineIcon(svg, "light")) +
+            toolbar("dark", inlineIcon(svg, "dark")) +
+            toolbar("light", inlineIcon(svg, "light"), true) +
+            toolbar("dark", inlineIcon(svg, "dark"), true)
+          host.append(group)
+          const figure = document.createElement("figure")
+          figure.innerHTML =
+            `<div class="tiles"><div class="light">${inlineIcon(svg, "light")}</div>` +
+            `<div class="dark">${inlineIcon(svg, "dark")}</div></div>` +
+            `<figcaption>${label}</figcaption>`
+          enlarged.append(figure)
+        }
+      }
+      renderToolbars()
 
       const gallery = document.getElementById("gallery")
       for (const [name, label] of fixtures) {

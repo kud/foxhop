@@ -62,9 +62,17 @@
   const matchesQuery = (tab, query) =>
     Object.entries(query ?? {}).every(([key, want]) => key === "currentWindow" || tab[key] === want)
 
+  const changeListeners = []
+
   globalThis.browser = {
     runtime: { sendMessage },
+    browserAction: {
+      setIcon: async (detail) => log("browserAction.setIcon", detail),
+    },
     storage: {
+      onChanged: {
+        addListener: (listener) => changeListeners.push(listener),
+      },
       local: {
         get: async (keys) => {
           if (keys == null) return clone(stored)
@@ -73,7 +81,14 @@
         },
         set: async (items) => {
           log("storage.local.set", items)
+          const changes = Object.fromEntries(
+            Object.entries(clone(items) ?? {}).map(([key, value]) => [
+              key,
+              { oldValue: clone(stored[key]), newValue: clone(value) },
+            ]),
+          )
           Object.assign(stored, clone(items))
+          for (const listener of changeListeners) listener(clone(changes), "local")
         },
       },
     },
