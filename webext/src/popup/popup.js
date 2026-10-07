@@ -25,11 +25,12 @@ let editing = null
 
 // The toolbar icon variants under src/icons/toolbar/, stored under
 // "toolbarIcon" the same way the favicon cache uses browser.storage.local.
-const TOOLBAR_ICONS = ["classic", "leaping-fox", "fox-head", "fox-tab", "tail-hop"]
+const TOOLBAR_ICONS = ["leaping-fox", "fox-head", "fox-tab", "tail-hop"]
+const DEFAULT_TOOLBAR_ICON = "leaping-fox"
 const iconPicker = document.getElementById("icon-picker")
 
 const checkToolbarIcon = (id) => {
-  const choice = TOOLBAR_ICONS.includes(id) ? id : "classic"
+  const choice = TOOLBAR_ICONS.includes(id) ? id : DEFAULT_TOOLBAR_ICON
   const picked = iconPicker.querySelector(`input[value="${choice}"]`)
   if (picked) picked.checked = true
 }

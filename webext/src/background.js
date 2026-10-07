@@ -204,15 +204,16 @@ const connect = () => {
 connect()
 
 // --- Toolbar icon ----------------------------------------------------------
-// The toolbar icon is a user setting stored under "toolbarIcon" ("classic" by
-// default). Classic restores the manifest theme_icons via path null; any other
+// The toolbar icon is a user setting stored under "toolbarIcon" ("leaping-fox" by
+// default). The default is the manifest icon, so path null restores theme_icons; any other
 // choice points at its self-adapting SVG, which carries both toolbar colours.
-const TOOLBAR_ICONS = ["classic", "leaping-fox", "fox-head", "fox-tab", "tail-hop"]
+const TOOLBAR_ICONS = ["leaping-fox", "fox-head", "fox-tab", "tail-hop"]
+const DEFAULT_TOOLBAR_ICON = "leaping-fox"
 
 const applyToolbarIcon = async (id) => {
-  const choice = TOOLBAR_ICONS.includes(id) ? id : "classic"
+  const choice = TOOLBAR_ICONS.includes(id) ? id : DEFAULT_TOOLBAR_ICON
   try {
-    if (choice === "classic") {
+    if (choice === DEFAULT_TOOLBAR_ICON) {
       await browser.browserAction.setIcon({ path: null })
     } else {
       await browser.browserAction.setIcon({
@@ -225,7 +226,7 @@ const applyToolbarIcon = async (id) => {
 const loadToolbarIcon = async () => {
   try {
     const stored = await browser.storage.local.get("toolbarIcon")
-    await applyToolbarIcon(stored?.toolbarIcon ?? "classic")
+    await applyToolbarIcon(stored?.toolbarIcon ?? DEFAULT_TOOLBAR_ICON)
   } catch {}
 }
 
