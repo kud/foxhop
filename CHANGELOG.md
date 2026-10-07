@@ -4,6 +4,14 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
+## [2.1.0] — 2026-10-07
+
+### Highlights
+
+- **The popup can now say what adding a target did.** The native host's `config add` reply includes the target's `name`, whether it was `created`, and whether its link changed (`urlChanged`), so the popup shows "Added X" or "X is already saved, link updated" and highlights the row. The popup needs this host for that feedback and falls back gracefully with older hosts. ([04c6f41](https://github.com/kud/foxhop/commit/04c6f41dc803ba2df21b2d5cb3217c6edcd012da))
+
+---
+
 ## [2.0.2] — 2026-10-05
 
 ### Fixes
