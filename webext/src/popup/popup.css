@@ -214,7 +214,7 @@ button.info {
   position: sticky;
   bottom: 0;
   z-index: 1;
-  margin-top: var(--space-2);
+  margin-top: auto;
   background: var(--bg);
   border-top: 1px solid var(--border);
   border-bottom: none;
@@ -222,4 +222,18 @@ button.info {
 
 .settings-icon {
   color: var(--muted);
+}
+
+/* The list view fills the popup so the settings row sits at the bottom even
+   when there is little above it. */
+body.popup-wide {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#view-list:not([hidden]) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
