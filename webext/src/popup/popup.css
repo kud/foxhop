@@ -211,7 +211,11 @@ button.info {
 /* ── settings, the popup's last row ─────────────────────────────────────── */
 
 .settings-row {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
   margin-top: var(--space-2);
+  background: var(--bg);
   border-top: 1px solid var(--border);
   border-bottom: none;
 }
