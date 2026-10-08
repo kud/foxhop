@@ -40,7 +40,8 @@
         const withStyles = await inlineStylesheets(html)
         const injected = `<head><base href="${pageDir.href}" /><script src="${shimUrl.href}"><\/script>`
         document.open()
-        document.write(withStyles.replace("<head>", injected))
+        document.write(withStyles.replace(/<meta name="color-scheme" content="light dark" \/>/, `<meta name="color-scheme" content="${scheme}" />`)
+          .replace("<head>", injected))
         document.close()
       }
 

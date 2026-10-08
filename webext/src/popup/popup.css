@@ -52,6 +52,7 @@ button.info {
   background: none;
   border: none;
   padding: 0;
+  display: inline-flex;
   font-family: inherit;
   line-height: inherit;
   cursor: pointer;
