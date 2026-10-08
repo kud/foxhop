@@ -1,6 +1,7 @@
-// Stands in for the WebExtension `browser` API so the real popup runs on a
-// plain web page. State lives in memory, seeded from the fixture named by
-// ?fixture=<name>; writes are applied in memory and logged, nothing else.
+// Stands in for the WebExtension `browser` API so the real popup or options
+// page runs on a plain web page. State lives in memory, seeded from the
+// fixture named by ?fixture=<name>; writes are applied in memory and logged,
+// nothing else.
 ;(() => {
   const params = new URLSearchParams(location.search)
   const name = params.get("fixture") ?? "typical"
@@ -65,7 +66,17 @@
   const changeListeners = []
 
   globalThis.browser = {
-    runtime: { sendMessage },
+    runtime: {
+      sendMessage,
+      // In the extension this opens the options page; here the frame itself
+      // navigates there, keeping the shim and the pinned scheme.
+      openOptionsPage: async () => {
+        log("runtime.openOptionsPage")
+        const frameParams = new URLSearchParams(location.search)
+        frameParams.set("page", "options")
+        location.href = `frame.html?${frameParams}`
+      },
+    },
     browserAction: {
       setIcon: async (detail) => log("browserAction.setIcon", detail),
     },

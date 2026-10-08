@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="../vendor/tokens.css" />
+    <link rel="stylesheet" href="../vendor/webext-ui.css" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body class="page">
+    <main class="card">
+      <h1>Settings</h1>
+
+      <h2 id="toolbar-icon-label">Toolbar icon</h2>
+      <div class="icon-options" role="radiogroup" aria-labelledby="toolbar-icon-label" id="icon-picker">
+        <label class="icon-option">
+          <input type="radio" name="toolbar-icon" value="leaping-fox" />
+          <img src="../icons/toolbar/leaping-fox.svg" alt="" />
+          <span>Leaping fox</span>
+        </label>
+        <label class="icon-option">
+          <input type="radio" name="toolbar-icon" value="fox-head" />
+          <img src="../icons/toolbar/fox-head.svg" alt="" />
+          <span>Fox head</span>
+        </label>
+        <label class="icon-option">
+          <input type="radio" name="toolbar-icon" value="fox-tab" />
+          <img src="../icons/toolbar/fox-tab.svg" alt="" />
+          <span>Fox and tab</span>
+        </label>
+        <label class="icon-option">
+          <input type="radio" name="toolbar-icon" value="tail-hop" />
+          <img src="../icons/toolbar/tail-hop.svg" alt="" />
+          <span>Tail hop</span>
+        </label>
+      </div>
+    </main>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

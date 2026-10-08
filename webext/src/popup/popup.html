@@ -11,14 +11,23 @@
   <body class="popup-wide">
     <header class="header">
       <h1 class="title"><img class="logo" src="../icons/foxhop-fox.svg" alt="Fox Hop" /></h1>
-      <a
-        class="info"
-        href="https://kud.io/projects/foxhop"
-        target="_blank"
-        rel="noopener"
-        aria-label="About Fox Hop"
-        >&#9432;</a
-      >
+      <div class="header-actions">
+        <a
+          class="info"
+          href="https://kud.io/projects/foxhop"
+          target="_blank"
+          rel="noopener"
+          aria-label="About Fox Hop"
+          >&#9432;</a
+        >
+        <button
+          class="info"
+          id="settings"
+          type="button"
+          aria-label="Settings"
+          title="Settings"
+        >&#9881;</button>
+      </div>
     </header>
 
     <!-- Warning view (shown when native host is not connected) -->
@@ -51,30 +60,6 @@
       <ul class="list" id="list"></ul>
       <p class="hint add-status" id="add-status" aria-live="polite" hidden></p>
       <p class="state" id="state" hidden></p>
-
-      <div class="section"><span class="section-title" id="toolbar-icon-label">Toolbar icon</span></div>
-      <div class="icon-options" role="radiogroup" aria-labelledby="toolbar-icon-label" id="icon-picker">
-        <label class="icon-option">
-          <input type="radio" name="toolbar-icon" value="leaping-fox" />
-          <img src="../icons/toolbar/leaping-fox.svg" alt="" />
-          <span>Leaping fox</span>
-        </label>
-        <label class="icon-option">
-          <input type="radio" name="toolbar-icon" value="fox-head" />
-          <img src="../icons/toolbar/fox-head.svg" alt="" />
-          <span>Fox head</span>
-        </label>
-        <label class="icon-option">
-          <input type="radio" name="toolbar-icon" value="fox-tab" />
-          <img src="../icons/toolbar/fox-tab.svg" alt="" />
-          <span>Fox and tab</span>
-        </label>
-        <label class="icon-option">
-          <input type="radio" name="toolbar-icon" value="tail-hop" />
-          <img src="../icons/toolbar/tail-hop.svg" alt="" />
-          <span>Tail hop</span>
-        </label>
-      </div>
     </div>
 
     <!-- Edit view -->

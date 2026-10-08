@@ -85,7 +85,7 @@ npx serve webext
 # open http://localhost:3000/preview/ (the port is printed)
 ```
 
-`webext/preview/` renders `src/popup/popup.html` once per fixture in `preview/fixtures/`, light and dark. `browser-shim.js` stands in for the `browser` API; clicks change state in memory only and writes are logged to the console. `vercel.json` serves `webext/` as-is for hosting.
+`webext/preview/` renders `src/popup/popup.html` once per fixture in `preview/fixtures/`, light and dark, plus `src/options/options.html` light and dark. `browser-shim.js` stands in for the `browser` API; clicks change state in memory only and writes are logged to the console. `vercel.json` serves `webext/` as-is for hosting.
 
 ## Updating the AMO listing
 

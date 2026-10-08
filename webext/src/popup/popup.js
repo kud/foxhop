@@ -23,29 +23,14 @@ let openTabs = []
 let faviconCache = {}
 let editing = null
 
-// The toolbar icon variants under src/icons/toolbar/, stored under
-// "toolbarIcon" the same way the favicon cache uses browser.storage.local.
-const TOOLBAR_ICONS = ["leaping-fox", "fox-head", "fox-tab", "tail-hop"]
-const DEFAULT_TOOLBAR_ICON = "leaping-fox"
-const iconPicker = document.getElementById("icon-picker")
+const settingsEl = document.getElementById("settings")
 
-const checkToolbarIcon = (id) => {
-  const choice = TOOLBAR_ICONS.includes(id) ? id : DEFAULT_TOOLBAR_ICON
-  const picked = iconPicker.querySelector(`input[value="${choice}"]`)
-  if (picked) picked.checked = true
-}
-
-iconPicker.addEventListener("change", (event) => {
-  if (!TOOLBAR_ICONS.includes(event.target.value)) return
-  browser.storage.local.set({ toolbarIcon: event.target.value }).catch(() => {})
-})
-
-const loadToolbarIcon = async () => {
+settingsEl.addEventListener("click", async () => {
   try {
-    const stored = await browser.storage.local.get("toolbarIcon")
-    checkToolbarIcon(stored?.toolbarIcon)
+    await browser.runtime.openOptionsPage()
   } catch {}
-}
+  window.close()
+})
 
 const send = (message) => browser.runtime.sendMessage(message)
 
@@ -355,7 +340,6 @@ const load = async () => {
     const stored = await browser.storage.local.get("favicons")
     if (stored?.favicons) faviconCache = stored.favicons
   } catch {}
-  loadToolbarIcon()
   openTabs = await browser.tabs.query({})
   const ack = await send({ type: "targets" }).catch(() => null)
   if (!ack?.ok) {

@@ -231,6 +231,14 @@
         <h2>Enlarged</h2>
         <div class="enlarged" id="enlarged"></div>
       </section>
+      <section>
+        <h2>Options</h2>
+        <p>
+          The settings page on the same shim. Picking an icon writes to the
+          frame's storage log; the popup's gear button navigates its frame here.
+        </p>
+        <div class="pair" id="options-pair"></div>
+      </section>
       <div id="gallery"></div>
     </main>
     <script>
@@ -310,6 +318,18 @@
           section.querySelector(".pair").append(figure)
         }
         gallery.append(section)
+      }
+
+      const optionsPair = document.getElementById("options-pair")
+      for (const scheme of ["light", "dark"]) {
+        const figure = document.createElement("figure")
+        figure.innerHTML = `<figcaption>options / ${scheme}</figcaption>`
+        const frame = document.createElement("iframe")
+        frame.src = `frame.html?page=options&scheme=${scheme}`
+        frame.title = `options page, ${scheme}`
+        frame.style.height = "300px"
+        figure.append(frame)
+        optionsPair.append(figure)
       }
     </script>
   </body>
