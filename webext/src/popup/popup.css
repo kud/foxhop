@@ -207,3 +207,15 @@ button.info {
   gap: var(--space-2);
   margin-top: var(--space-1);
 }
+
+/* ── settings, the popup's last row ─────────────────────────────────────── */
+
+.settings-row {
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  border-bottom: none;
+}
+
+.settings-icon {
+  color: var(--muted);
+}
