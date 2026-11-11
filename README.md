@@ -46,7 +46,7 @@ Then install the Firefox extension:
 - **Permanent** — install from [addons.mozilla.org](https://addons.mozilla.org/firefox/addon/foxhop/) — the signed, auto-updating listing.
 - **Temporary (development)** — open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on**, and select `webextension/manifest.json` from this repo.
 
-The extension asks for access to page content so it can fill a text box and read text on the tab you name — only when you run `paste` or `read`.
+`foxhop paste` and `foxhop read` need access to page content, which the extension does not ask for at install. To use them, open Fox Hop's settings (toolbar button → **Settings**) and click **Grant** under **Page access**. Focusing tabs works without it.
 
 ## Usage
 

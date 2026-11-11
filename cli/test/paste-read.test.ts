@@ -76,3 +76,30 @@ describe("requestTimeout", () => {
     expect(host.requestTimeout({ timeoutMs: 999999 })).toBe(310000)
   })
 })
+
+describe("page access", () => {
+  it("turns the extension's no-access error into the grant hint", async () => {
+    const access = await import("../src/page-access.js")
+    expect(access.describeAckError("no page access", "paste failed")).toBe(
+      access.PAGE_ACCESS_HINT,
+    )
+    expect(access.PAGE_ACCESS_HINT).toMatch(/needs page access.*click Grant/)
+  })
+
+  it("passes other errors through and falls back when there is none", async () => {
+    const access = await import("../src/page-access.js")
+    expect(access.describeAckError("no text box on that tab", "paste failed")).toBe(
+      "no text box on that tab",
+    )
+    expect(access.describeAckError(undefined, "read failed")).toBe("read failed")
+  })
+
+  it("matches the error the extension sends", async () => {
+    const access = await import("../src/page-access.js")
+    const background = readFileSync(
+      new URL("../../webext/src/background.js", import.meta.url),
+      "utf8",
+    )
+    expect(background).toContain(`const NO_PAGE_ACCESS = "${access.NO_PAGE_ACCESS}"`)
+  })
+})

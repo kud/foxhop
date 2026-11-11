@@ -25,6 +25,7 @@ import { sync, clearScripts, autoSync } from "./sync.js"
 import { defaultScriptsDir } from "./paths.js"
 import { fileURLToPath } from "node:url"
 import { bold, dim, cyan, yellow, ok, fail } from "./ui.js"
+import { describeAckError } from "./page-access.js"
 
 const browserApp = () => process.env.FOXHOP_BROWSER ?? "Firefox Nightly"
 // Use the absolute path: `open` lives in /usr/bin, which isn't always on PATH
@@ -252,7 +253,7 @@ const paste = defineCommand({
         )
         process.exit(1)
       }
-      console.error(fail(ack?.error ?? "paste failed"))
+      console.error(fail(describeAckError(ack?.error, "paste failed")))
       process.exit(1)
     } catch (error) {
       onHostError(error)
@@ -335,7 +336,7 @@ const read = defineCommand({
       const message =
         ack?.error === "no tab matches"
           ? `no tab matches ${args.name}`
-          : ack?.error ?? "read failed"
+          : describeAckError(ack?.error, "read failed")
       console.error(fail(message))
       process.exit(1)
     } catch (error) {

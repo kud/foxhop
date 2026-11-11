@@ -58,3 +58,23 @@
   margin: 0;
   accent-color: var(--accent);
 }
+
+/* ── page access ──────────────────────────────────────────────────────── */
+
+.page-access-note {
+  margin-block: var(--space-3);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--line-loose);
+}
+
+.page-access-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.page-access-row [hidden] {
+  display: none;
+}

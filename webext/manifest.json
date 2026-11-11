@@ -12,7 +12,8 @@
       }
     }
   },
-  "permissions": ["tabs", "nativeMessaging", "storage", "scripting", "<all_urls>"],
+  "permissions": ["tabs", "nativeMessaging", "storage", "scripting"],
+  "optional_permissions": ["<all_urls>"],
   "background": {
     "scripts": ["src/background.js"],
     "type": "module"

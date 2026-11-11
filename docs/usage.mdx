@@ -24,6 +24,8 @@ Set `FOXHOP_BROWSER` if you don't run Firefox Nightly (e.g. `FOXHOP_BROWSER=Fire
 
 `paste` fills a text box on a target's tab (hopping to it like `focus` first) and `read` prints text from it without focusing anything. Neither submits a form or presses Enter.
 
+Both need access to page content, an optional permission the extension does not request at install. Open Fox Hop's settings (toolbar button → **Settings**) and click **Grant** under **Page access**; Firefox asks you to confirm. Until then they exit 1 with `foxhop needs page access for paste/read: …`. **Revoke** on the same page takes it back; `focus` never needs it.
+
 ```sh
 git diff | foxhop paste chatgpt
 foxhop paste notes            # no stdin: uses the clipboard

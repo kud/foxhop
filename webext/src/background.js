@@ -125,9 +125,18 @@ const waitForComplete = (tabId, boundMs = 15000) =>
     browser.tabs.onUpdated.addListener(listener)
   })
 
+// <all_urls> is an optional permission granted from the options page, so
+// paste and read check for it before touching a tab. The CLI recognises this
+// exact error and explains how to grant it.
+const NO_PAGE_ACCESS = "no page access"
+const PAGE_ACCESS = { origins: ["<all_urls>"] }
+const hasPageAccess = () =>
+  browser.permissions.contains(PAGE_ACCESS).catch(() => false)
+
 // Runs inside the target's tab (which focusTab has just brought forward) and
 // returns whatever pasteInPage decided.
 const paste = async ({ text, into, ...target }) => {
+  if (!(await hasPageAccess())) return { ok: false, error: NO_PAGE_ACCESS }
   const focused = await focusTab(target)
   if (focused.action === "not-found")
     return { ok: false, error: "no matching tab and no url to open" }
@@ -146,6 +155,7 @@ const paste = async ({ text, into, ...target }) => {
 
 // Reads without focusing: findTab never opens a tab, so read is read-only.
 const read = async ({ from, last, wait, timeoutMs, ...target }) => {
+  if (!(await hasPageAccess())) return { ok: false, error: NO_PAGE_ACCESS }
   const found = await findTab(target)
   if (!found) return { ok: false, error: "no tab matches" }
   try {
