@@ -12,7 +12,7 @@
       }
     }
   },
-  "permissions": ["tabs", "nativeMessaging", "storage"],
+  "permissions": ["tabs", "nativeMessaging", "storage", "scripting", "<all_urls>"],
   "background": {
     "scripts": ["src/background.js"],
     "type": "module"

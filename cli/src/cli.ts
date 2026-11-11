@@ -1,5 +1,5 @@
 import { defineCommand, runMain } from "citty"
-import { spawn } from "node:child_process"
+import { execFileSync, spawn } from "node:child_process"
 import { existsSync, unlinkSync } from "node:fs"
 import {
   readConfig,
@@ -56,6 +56,40 @@ const oneOf = <T extends string>(
   if (value === undefined) return undefined
   if (allowed.includes(value as T)) return value as T
   console.error(fail(`--${flag} must be one of: ${allowed.join(" | ")}`))
+  process.exit(1)
+}
+
+// Shared socket-failure handling for focus/paste/read. A stale socket (host
+// died without cleanup) refuses connections — remove the dead socket and tell
+// the user how to repair the host; never silently open a fresh tab on every
+// press, that spawns endless tabs. A genuine timeout (host reachable but the
+// extension never answered) falls back to opening the URL once when the
+// caller wants that — focus, so the action still does something. Paste/read
+// have nothing useful to do remotely, so they just fail.
+const onHostError = (error: unknown, fallbackUrl?: string): void => {
+  const code = (error as NodeJS.ErrnoException)?.code
+  if (code === "ECONNREFUSED" || code === "ENOENT") {
+    if (existsSync(SOCKET_PATH)) {
+      try {
+        unlinkSync(SOCKET_PATH)
+      } catch {}
+    }
+    console.error(
+      fail(
+        "foxhop host not running. Run `foxhop install`, then restart Firefox (or reload the extension).",
+      ),
+    )
+    process.exit(1)
+  }
+  if (fallbackUrl) {
+    openUrl(fallbackUrl)
+    return
+  }
+  console.error(
+    fail(
+      "cannot reach the host — is Firefox running with the foxhop extension?",
+    ),
+  )
   process.exit(1)
 }
 
@@ -125,35 +159,7 @@ const focus = defineCommand({
       } else
         console.error(fail(ack?.error ?? "no matching tab and no url to open"))
     } catch (error) {
-      const code = (error as NodeJS.ErrnoException)?.code
-      // A stale socket (host died without cleanup) refuses connections. Never
-      // silently open a fresh tab on every press — that spawns endless tabs.
-      // Remove the dead socket and tell the user how to repair the host.
-      if (code === "ECONNREFUSED" || code === "ENOENT") {
-        if (existsSync(SOCKET_PATH)) {
-          try {
-            unlinkSync(SOCKET_PATH)
-          } catch {}
-        }
-        console.error(
-          fail(
-            "foxhop host not running. Run `foxhop install`, then restart Firefox (or reload the extension).",
-          ),
-        )
-        process.exit(1)
-      }
-      // Genuine timeout (host reachable but extension never answered) — fall
-      // back to opening the URL once so the action still does something.
-      if ("url" in request && request.url) {
-        openUrl(request.url)
-      } else {
-        console.error(
-          fail(
-            "cannot reach the host — is Firefox running with the foxhop extension?",
-          ),
-        )
-        process.exit(1)
-      }
+      onHostError(error, "url" in request ? request.url : undefined)
     }
   },
 })
@@ -170,9 +176,173 @@ const resolveNamed = (name: string, url?: string) => {
     url: url ?? target.url,
     strategy: target.strategy ?? "hostname",
     pick: target.pick ?? "recent",
+    // into/from ride along on every request: the focus op ignores them,
+    // paste/read fall back to them as the saved selector. Undefined keys are
+    // dropped by JSON.stringify, so focus requests are unchanged on the wire.
+    into: target.into,
+    from: target.from,
     ...(url && target.navigate ? { navigateTo: url } : {}),
   }
 }
+
+// Paste text is piped in when stdin is not a TTY; otherwise it comes from the
+// clipboard. The absolute pbpaste path matters — /usr/bin is not always on
+// PATH (see runOpen).
+const readPasteText = async (): Promise<string> => {
+  if (!process.stdin.isTTY) {
+    return new Promise((resolve, reject) => {
+      let text = ""
+      process.stdin.setEncoding("utf8")
+      process.stdin.on("data", (chunk: string) => (text += chunk))
+      process.stdin.on("end", () => resolve(text))
+      process.stdin.on("error", reject)
+    })
+  }
+  return execFileSync("/usr/bin/pbpaste", []).toString("utf8")
+}
+
+const paste = defineCommand({
+  meta: {
+    name: "paste",
+    description:
+      "Paste text (stdin when piped, else the clipboard) into a text box on a target's tab — never submits",
+  },
+  args: {
+    name: {
+      type: "positional",
+      required: true,
+      description: "Saved target name (see `foxhop list`)",
+    },
+    into: { type: "string", description: "CSS selector of the text box to fill" },
+  },
+  run: async ({ args }) => {
+    const base = resolveNamed(String(args.name))
+    if (!base) {
+      console.error(
+        fail(
+          `no target named "${args.name}". Edit ${CONFIG_PATH}, or run \`foxhop list\` / \`foxhop init\`.`,
+        ),
+      )
+      process.exit(1)
+    }
+    const text = await readPasteText()
+    if (!text.trim()) {
+      console.error(fail("nothing to paste"))
+      process.exit(1)
+    }
+    // The extension may wait for a freshly opened tab to finish loading;
+    // give the whole round-trip 20s plus the host's slack.
+    const timeoutMs = 20000
+    const request = { ...base, op: "paste", text, timeoutMs }
+    try {
+      const ack = await sendToHost(request, timeoutMs + 6000)
+      if (ack?.ok && "filled" in ack) {
+        foreground()
+        return
+      }
+      if (ack?.ok && ack.action === "not-found") {
+        console.error(fail("no matching tab and no url to open"))
+        process.exit(1)
+      }
+      // An extension predating paste treats unknown ops as focus and answers
+      // with a focus ack — no filled field to be seen.
+      if (ack?.ok) {
+        console.error(
+          fail("the foxhop extension is too old to paste/read: update it"),
+        )
+        process.exit(1)
+      }
+      console.error(fail(ack?.error ?? "paste failed"))
+      process.exit(1)
+    } catch (error) {
+      onHostError(error)
+    }
+  },
+})
+
+const read = defineCommand({
+  meta: {
+    name: "read",
+    description: "Read text from elements on a target's tab without focusing it",
+  },
+  args: {
+    name: {
+      type: "positional",
+      required: true,
+      description: "Saved target name (see `foxhop list`)",
+    },
+    from: { type: "string", description: "CSS selector to read" },
+    last: { type: "boolean", description: "Print only the last match" },
+    wait: {
+      type: "boolean",
+      description: "Wait until the text has been unchanged for 1.5s",
+    },
+    timeout: {
+      type: "string",
+      description: "Seconds --wait may take (default 60, cap 300)",
+    },
+  },
+  run: async ({ args }) => {
+    const base = resolveNamed(String(args.name))
+    if (!base) {
+      console.error(
+        fail(
+          `no target named "${args.name}". Edit ${CONFIG_PATH}, or run \`foxhop list\` / \`foxhop init\`.`,
+        ),
+      )
+      process.exit(1)
+    }
+    const from = args.from ?? base.from
+    if (!from) {
+      console.error(
+        fail("no selector: pass --from or save one with `foxhop edit <target> --from`"),
+      )
+      process.exit(1)
+    }
+    // Seconds → ms, clamped to the cap the page-side poll honours.
+    const seconds = args.timeout
+      ? Math.min(Math.max(Number(args.timeout) || 0, 1), 300)
+      : 60
+    const timeoutMs = args.wait ? seconds * 1000 : 5000
+    // No url here on purpose: read never opens a tab, it only looks.
+    const request = {
+      op: "read",
+      match: base.match,
+      strategy: base.strategy,
+      pick: base.pick,
+      from,
+      last: Boolean(args.last),
+      wait: Boolean(args.wait),
+      timeoutMs,
+    }
+    try {
+      const ack = await sendToHost(request, timeoutMs + 6000)
+      if (ack?.ok && Array.isArray(ack.texts)) {
+        process.stdout.write(ack.texts.join("\n\n") + "\n")
+        return
+      }
+      if (ack?.ok && !("texts" in ack)) {
+        // Old extensions answer a read by focusing the tab instead.
+        if (ack.action === "not-found") {
+          console.error(fail(`no tab matches ${args.name}`))
+          process.exit(1)
+        }
+        console.error(
+          fail("the foxhop extension is too old to paste/read: update it"),
+        )
+        process.exit(1)
+      }
+      const message =
+        ack?.error === "no tab matches"
+          ? `no tab matches ${args.name}`
+          : ack?.error ?? "read failed"
+      console.error(fail(message))
+      process.exit(1)
+    } catch (error) {
+      onHostError(error)
+    }
+  },
+})
 
 const list = defineCommand({
   meta: { name: "list", description: "List saved focus targets" },
@@ -386,7 +556,7 @@ const edit = defineCommand({
   meta: {
     name: "edit",
     description:
-      "Edit a saved target in place — the id never changes (pass \"\" to clear --title or --url)",
+      "Edit a saved target in place — the id never changes (pass \"\" to clear --title/--url/--into/--from)",
   },
   args: {
     name: {
@@ -410,12 +580,24 @@ const edit = defineCommand({
       description:
         "Let `focus <name> --url` repoint the matching tab (--no-navigate to turn off)",
     },
+    into: {
+      type: "string",
+      description:
+        "CSS selector `foxhop paste` fills when no --into is given (pass \"\" to clear)",
+    },
+    from: {
+      type: "string",
+      description:
+        "CSS selector `foxhop read` prints when no --from is given (pass \"\" to clear)",
+    },
   },
   run: ({ args }) => {
     const name = String(args.name)
     const patch: TargetPatch = {}
     if (args.title !== undefined) patch.title = args.title.trim() || undefined
     if (args.url !== undefined) patch.url = args.url.trim() || undefined
+    if (args.into !== undefined) patch.into = args.into.trim() || undefined
+    if (args.from !== undefined) patch.from = args.from.trim() || undefined
     if (args.match !== undefined) {
       if (!args.match.trim()) {
         console.error(fail("--match cannot be empty"))
@@ -489,6 +671,8 @@ const fav = defineCommand({
 const NAME = "foxhop"
 const subCommands = {
   focus,
+  paste,
+  read,
   list,
   tabs,
   add,

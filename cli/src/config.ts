@@ -23,6 +23,8 @@ export interface Target {
   pick?: Pick
   navigate?: boolean
   favorite?: boolean
+  into?: string
+  from?: string
 }
 
 export interface Config {
@@ -124,6 +126,16 @@ const SCHEMA = {
           favorite: {
             type: "boolean",
             description: "Pin this target to the top of the list",
+          },
+          into: {
+            type: "string",
+            description:
+              "CSS selector `foxhop paste` fills when no --into is given",
+          },
+          from: {
+            type: "string",
+            description:
+              "CSS selector `foxhop read` prints when no --from is given",
           },
         },
       },

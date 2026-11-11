@@ -46,6 +46,8 @@ Then install the Firefox extension:
 - **Permanent** — install from [addons.mozilla.org](https://addons.mozilla.org/firefox/addon/foxhop/) — the signed, auto-updating listing.
 - **Temporary (development)** — open `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on**, and select `webextension/manifest.json` from this repo.
 
+The extension asks for access to page content so it can fill a text box and read text on the tab you name — only when you run `paste` or `read`.
+
 ## Usage
 
 Targets live in `~/.config/foxhop/tabs.json`. Add one with `foxhop add` or by editing the file directly.
@@ -57,6 +59,8 @@ $ foxhop tabs                   # list currently open Firefox tabs   (--json)
 $ foxhop add https://mail.google.com --title Gmail   # id: gmail (slug of the title)
 $ foxhop edit gmail --url https://mail.google.com/mail/u/1   # change fields, never the id
 $ foxhop remove gmail
+$ git diff | foxhop paste chatgpt   # fill a text box on its tab (stdin, or the clipboard)
+$ foxhop read notes --from "article" --last   # print text from its tab, without focusing it
 $ foxhop sync                   # generate per-tab Raycast hotkey scripts
 ```
 
