@@ -68,8 +68,8 @@ describe("requestTimeout", () => {
     expect(host.requestTimeout({ timeoutMs: 20000 })).toBe(25000)
   })
 
-  it("never drops below the base timeout", () => {
-    expect(host.requestTimeout({ timeoutMs: 1000 })).toBe(3000)
+  it("still adds the slack to a short timeout", () => {
+    expect(host.requestTimeout({ timeoutMs: 1000 })).toBe(6000)
   })
 
   it("caps at 310s", () => {
