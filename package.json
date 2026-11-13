@@ -4,6 +4,7 @@
   "description": "Fox Hop — focus a Firefox tab by URL. Monorepo: CLI native host + browser extension.",
   "private": true,
   "license": "MIT",
+  "homepage": "https://kud.io/projects/foxhop",
   "author": "kud",
   "type": "module",
   "workspaces": [
