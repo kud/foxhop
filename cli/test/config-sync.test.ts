@@ -176,7 +176,10 @@ describe("sync icon", () => {
 
     syncMod.sync("/usr/bin/node", "/opt/foxhop/cli.js", dir)
     for (const file of tracked) {
-      expect(statSync(join(dir, file)).mtimeMs).toBe(backdate.getTime())
+      // Filesystems can report a fractional mtimeMs just below the set millisecond.
+      expect(Math.round(statSync(join(dir, file)).mtimeMs)).toBe(
+        backdate.getTime(),
+      )
     }
   })
 })
