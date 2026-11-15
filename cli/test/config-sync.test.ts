@@ -167,7 +167,7 @@ describe("sync icon", () => {
     const dir = join(configHome, "icon-idempotent")
     syncMod.sync("/usr/bin/node", "/opt/foxhop/cli.js", dir)
     const icon = expectedIcon()
-    const backdate = new Date(Date.now() - 60_000)
+    const backdate = new Date(Math.floor((Date.now() - 60_000) / 1000) * 1000)
     const tracked = readdirSync(dir).filter(
       (file) => file.startsWith("focus-") || file === icon,
     )
