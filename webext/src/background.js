@@ -1,4 +1,5 @@
 import { matchesTarget } from "./match.js"
+import { pasteInPage, readInPage } from "./page.js"
 
 const HOST_NAME = "io.kud.foxhop"
 
@@ -21,6 +22,14 @@ const chooseTab = (matches, pick) => {
     return mostRecent(pinned.length ? pinned : matches)
   }
   return mostRecent(matches)
+}
+
+// Tab choosing shared by focus, paste and read: filter by the target's match,
+// then pick. Null when nothing matches.
+const findTab = async ({ match, strategy = "hostname", pick = "recent" }) => {
+  const tabs = await browser.tabs.query({})
+  const matches = tabs.filter((tab) => matchesTab(tab, match, strategy))
+  return matches.length ? { tab: chooseTab(matches, pick), matches } : null
 }
 
 const focusWindow = async (windowId) => {
@@ -65,11 +74,10 @@ const focusTab = async ({
     }
   }
 
-  const tabs = await browser.tabs.query({})
-  const matches = tabs.filter((tab) => matchesTab(tab, match, strategy))
+  const found = await findTab({ match, strategy, pick })
 
-  if (matches.length) {
-    const tab = chooseTab(matches, pick)
+  if (found) {
+    const { tab, matches } = found
     const navigated =
       Boolean(destination) && normaliseUrl(tab.url) !== destination
     await browser.tabs.update(tab.id, {
@@ -101,6 +109,67 @@ const focusTab = async ({
   return { action: "not-found" }
 }
 
+// A just-opened tab has no DOM to inject into yet — wait (bounded) for its
+// load to finish so executeScript finds a document.
+const waitForComplete = (tabId, boundMs = 15000) =>
+  new Promise((resolve) => {
+    const finish = () => {
+      browser.tabs.onUpdated.removeListener(listener)
+      clearTimeout(timer)
+      resolve()
+    }
+    const listener = (updatedId, change) => {
+      if (updatedId === tabId && change.status === "complete") finish()
+    }
+    const timer = setTimeout(finish, boundMs)
+    browser.tabs.onUpdated.addListener(listener)
+  })
+
+// <all_urls> is an optional permission granted from the options page, so
+// paste and read check for it before touching a tab. The CLI recognises this
+// exact error and explains how to grant it.
+const NO_PAGE_ACCESS = "no page access"
+const PAGE_ACCESS = { origins: ["<all_urls>"] }
+const hasPageAccess = () =>
+  browser.permissions.contains(PAGE_ACCESS).catch(() => false)
+
+// Runs inside the target's tab (which focusTab has just brought forward) and
+// returns whatever pasteInPage decided.
+const paste = async ({ text, into, ...target }) => {
+  if (!(await hasPageAccess())) return { ok: false, error: NO_PAGE_ACCESS }
+  const focused = await focusTab(target)
+  if (focused.action === "not-found")
+    return { ok: false, error: "no matching tab and no url to open" }
+  if (focused.action === "opened") await waitForComplete(focused.tabId)
+  try {
+    const [injection] = await browser.scripting.executeScript({
+      target: { tabId: focused.tabId },
+      func: pasteInPage,
+      args: [text, into ?? null],
+    })
+    return injection?.result ?? { ok: false, error: "the page returned nothing" }
+  } catch (error) {
+    return { ok: false, error: `cannot access that tab: ${error.message}` }
+  }
+}
+
+// Reads without focusing: findTab never opens a tab, so read is read-only.
+const read = async ({ from, last, wait, timeoutMs, ...target }) => {
+  if (!(await hasPageAccess())) return { ok: false, error: NO_PAGE_ACCESS }
+  const found = await findTab(target)
+  if (!found) return { ok: false, error: "no tab matches" }
+  try {
+    const [injection] = await browser.scripting.executeScript({
+      target: { tabId: found.tab.id },
+      func: readInPage,
+      args: [from, Boolean(last), Boolean(wait), Number(timeoutMs) || 60000],
+    })
+    return injection?.result ?? { ok: false, error: "the page returned nothing" }
+  } catch (error) {
+    return { ok: false, error: `cannot access that tab: ${error.message}` }
+  }
+}
+
 const listTabs = async () => {
   const tabs = await browser.tabs.query({})
   return {
@@ -119,6 +188,8 @@ const listTabs = async () => {
 
 const handle = async (request) => {
   if (request.op === "list") return { ok: true, ...(await listTabs()) }
+  if (request.op === "paste") return paste(request)
+  if (request.op === "read") return read(request)
   return { ok: true, ...(await focusTab(request)) }
 }
 

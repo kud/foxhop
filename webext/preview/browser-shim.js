@@ -65,6 +65,17 @@
 
   const changeListeners = []
 
+  // Optional host access (<all_urls>): the fixture's pageAccess, or
+  // ?access=granted|none to pin it. Grant and revoke flip it in memory.
+  const accessParam = params.get("access")
+  let pageAccess = accessParam ? accessParam === "granted" : fixture.pageAccess === true
+  const permissionListeners = { added: [], removed: [] }
+  const setPageAccess = (granted, permissions) => {
+    if (pageAccess === granted) return
+    pageAccess = granted
+    for (const listener of permissionListeners[granted ? "added" : "removed"]) listener(clone(permissions))
+  }
+
   globalThis.browser = {
     runtime: {
       sendMessage,
@@ -76,6 +87,21 @@
         frameParams.set("page", "options")
         location.href = `frame.html?${frameParams}`
       },
+    },
+    permissions: {
+      contains: async () => pageAccess,
+      request: async (permissions) => {
+        log("permissions.request", permissions)
+        setPageAccess(true, permissions)
+        return true
+      },
+      remove: async (permissions) => {
+        log("permissions.remove", permissions)
+        setPageAccess(false, permissions)
+        return true
+      },
+      onAdded: { addListener: (listener) => permissionListeners.added.push(listener) },
+      onRemoved: { addListener: (listener) => permissionListeners.removed.push(listener) },
     },
     browserAction: {
       setIcon: async (detail) => log("browserAction.setIcon", detail),

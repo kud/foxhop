@@ -35,6 +35,21 @@
           <span>Tail hop</span>
         </label>
       </div>
+
+      <h2 id="page-access-label">Page access</h2>
+      <section class="page-access" aria-labelledby="page-access-label">
+        <p class="page-access-note">
+          <code>foxhop paste</code> and <code>foxhop read</code> fill a text box or read text on the tab you name, which needs access to page content on every site. Fox Hop only uses it when you run one of them. Focusing tabs works without it.
+        </p>
+        <div class="page-access-row">
+          <span class="cluster" role="status">
+            <span class="dot" id="page-access-dot" data-tone="idle"></span>
+            <span id="page-access-state">Checking…</span>
+          </span>
+          <button class="btn btn-primary" id="page-access-grant" type="button" hidden>Grant</button>
+          <button class="btn" id="page-access-revoke" type="button" hidden>Revoke</button>
+        </div>
+      </section>
     </main>
 
     <script type="module" src="options.js"></script>

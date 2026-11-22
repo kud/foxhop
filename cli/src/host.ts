@@ -18,6 +18,13 @@ import { autoSync } from "./sync.js"
 
 type Ack = { reqId: number; ok: boolean; action?: string; error?: string }
 
+// Per-request timeout: the fixed default, or a request's own timeout plus 5s
+// of transport slack, capped far above any sane wait. Exported for tests.
+export const requestTimeout = (request: { timeoutMs?: number }): number =>
+  typeof request.timeoutMs === "number"
+    ? Math.min(Math.max(REQUEST_TIMEOUT_MS, request.timeoutMs + 5000), 310000)
+    : REQUEST_TIMEOUT_MS
+
 // Applies a popup-initiated config mutation against tabs.json and returns the
 // reply payload (the resulting targets list so the popup can re-render).
 // Exported for tests; runHost wraps it with the native-messaging transport.
@@ -165,7 +172,7 @@ export const runHost = () => {
         if (!pending.has(reqId)) return
         pending.delete(reqId)
         socket.end(JSON.stringify({ ok: false, error: "timeout" }))
-      }, REQUEST_TIMEOUT_MS)
+      }, requestTimeout(request as { timeoutMs?: number }))
 
       pending.set(reqId, (ack) => {
         clearTimeout(timeout)
