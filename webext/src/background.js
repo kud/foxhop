@@ -1,5 +1,6 @@
 import { matchesTarget } from "./match.js"
 import { pasteInPage, readInPage } from "./page.js"
+import { resolveContainer } from "./container.js"
 
 const HOST_NAME = "io.kud.foxhop"
 
@@ -24,10 +25,21 @@ const chooseTab = (matches, pick) => {
   return mostRecent(matches)
 }
 
-// Tab choosing shared by focus, paste and read: filter by the target's match,
-// then pick. Null when nothing matches.
-const findTab = async ({ match, strategy = "hostname", pick = "recent" }) => {
-  const tabs = await browser.tabs.query({})
+// A target's optional container, resolved to its cookieStoreId: null when the
+// target has none, `{ error }` when the name matches no container.
+const containerScope = (container) =>
+  container ? resolveContainer(browser.contextualIdentities, container) : null
+
+// Tab choosing shared by focus, paste and read: filter by the target's match
+// (and its container's cookieStoreId, when it has one), then pick. Null when
+// nothing matches.
+const findTab = async ({
+  match,
+  strategy = "hostname",
+  pick = "recent",
+  cookieStoreId,
+}) => {
+  const tabs = await browser.tabs.query(cookieStoreId ? { cookieStoreId } : {})
   const matches = tabs.filter((tab) => matchesTab(tab, match, strategy))
   return matches.length ? { tab: chooseTab(matches, pick), matches } : null
 }
@@ -62,7 +74,16 @@ const focusTab = async ({
   pick = "recent",
   url,
   navigateTo,
+  container,
 }) => {
+  const scope = await containerScope(container)
+  if (scope?.error) return { ok: false, error: scope.error }
+  const inContainer = scope
+    ? { cookieStoreId: scope.cookieStoreId }
+    : {}
+  // Echoed back so the CLI can tell a container-aware extension from an older
+  // one that would have ignored the container and used the default.
+  const containerAck = scope ? { container: scope.name } : {}
   const destination = navigateTo ? normaliseUrl(navigateTo) : null
   if (
     navigateTo &&
@@ -74,7 +95,7 @@ const focusTab = async ({
     }
   }
 
-  const found = await findTab({ match, strategy, pick })
+  const found = await findTab({ match, strategy, pick, ...inContainer })
 
   if (found) {
     const { tab, matches } = found
@@ -91,22 +112,45 @@ const focusTab = async ({
       tabId: tab.id,
       windowId: tab.windowId,
       matchCount: matches.length,
+      ...containerAck,
     }
   }
 
   const openUrl = destination ?? url
   if (openUrl) {
-    const created = await browser.tabs.create({ url: openUrl })
+    const created = await browser.tabs.create({ url: openUrl, ...inContainer })
     await focusWindow(created.windowId)
     return {
       action: "opened",
       ...(destination ? { navigated: false } : {}),
       tabId: created.id,
       windowId: created.windowId,
+      ...containerAck,
     }
   }
 
   return { action: "not-found" }
+}
+
+// An ad-hoc URL opened in a new tab, in the named container when one is
+// given. Never looks for an existing tab: that is what focus is for.
+const openTab = async ({ url, container }) => {
+  const destination = normaliseUrl(url)
+  if (!destination) return { ok: false, error: `not an http(s) url: ${url}` }
+  const scope = await containerScope(container)
+  if (scope?.error) return { ok: false, error: scope.error }
+  const created = await browser.tabs.create({
+    url: destination,
+    ...(scope ? { cookieStoreId: scope.cookieStoreId } : {}),
+  })
+  await focusWindow(created.windowId)
+  return {
+    ok: true,
+    action: "opened",
+    tabId: created.id,
+    windowId: created.windowId,
+    ...(scope ? { container: scope.name } : {}),
+  }
 }
 
 // A just-opened tab has no DOM to inject into yet — wait (bounded) for its
@@ -138,6 +182,7 @@ const hasPageAccess = () =>
 const paste = async ({ text, into, ...target }) => {
   if (!(await hasPageAccess())) return { ok: false, error: NO_PAGE_ACCESS }
   const focused = await focusTab(target)
+  if (focused.ok === false) return focused
   if (focused.action === "not-found")
     return { ok: false, error: "no matching tab and no url to open" }
   if (focused.action === "opened") await waitForComplete(focused.tabId)
@@ -147,7 +192,11 @@ const paste = async ({ text, into, ...target }) => {
       func: pasteInPage,
       args: [text, into ?? null],
     })
-    return injection?.result ?? { ok: false, error: "the page returned nothing" }
+    const result = injection?.result ?? {
+      ok: false,
+      error: "the page returned nothing",
+    }
+    return focused.container ? { ...result, container: focused.container } : result
   } catch (error) {
     return { ok: false, error: `cannot access that tab: ${error.message}` }
   }
@@ -156,7 +205,12 @@ const paste = async ({ text, into, ...target }) => {
 // Reads without focusing: findTab never opens a tab, so read is read-only.
 const read = async ({ from, last, wait, timeoutMs, ...target }) => {
   if (!(await hasPageAccess())) return { ok: false, error: NO_PAGE_ACCESS }
-  const found = await findTab(target)
+  const scope = await containerScope(target.container)
+  if (scope?.error) return { ok: false, error: scope.error }
+  const found = await findTab({
+    ...target,
+    ...(scope ? { cookieStoreId: scope.cookieStoreId } : {}),
+  })
   if (!found) return { ok: false, error: "no tab matches" }
   try {
     const [injection] = await browser.scripting.executeScript({
@@ -164,7 +218,11 @@ const read = async ({ from, last, wait, timeoutMs, ...target }) => {
       func: readInPage,
       args: [from, Boolean(last), Boolean(wait), Number(timeoutMs) || 60000],
     })
-    return injection?.result ?? { ok: false, error: "the page returned nothing" }
+    const result = injection?.result ?? {
+      ok: false,
+      error: "the page returned nothing",
+    }
+    return scope ? { ...result, container: scope.name } : result
   } catch (error) {
     return { ok: false, error: `cannot access that tab: ${error.message}` }
   }
@@ -182,6 +240,7 @@ const listTabs = async () => {
       pinned: tab.pinned,
       lastAccessed: tab.lastAccessed,
       favIconUrl: tab.favIconUrl,
+      cookieStoreId: tab.cookieStoreId,
     })),
   }
 }
@@ -190,6 +249,7 @@ const handle = async (request) => {
   if (request.op === "list") return { ok: true, ...(await listTabs()) }
   if (request.op === "paste") return paste(request)
   if (request.op === "read") return read(request)
+  if (request.op === "open") return openTab(request)
   return { ok: true, ...(await focusTab(request)) }
 }
 

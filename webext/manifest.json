@@ -12,7 +12,14 @@
       }
     }
   },
-  "permissions": ["tabs", "nativeMessaging", "storage", "scripting"],
+  "permissions": [
+    "tabs",
+    "nativeMessaging",
+    "storage",
+    "scripting",
+    "contextualIdentities",
+    "cookies"
+  ],
   "optional_permissions": ["<all_urls>"],
   "background": {
     "scripts": ["src/background.js"],
