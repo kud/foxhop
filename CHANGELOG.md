@@ -4,7 +4,7 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
-## Unreleased
+## [2.2.0] — 2026-11-26
 
 ### Highlights
 
