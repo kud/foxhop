@@ -26,6 +26,13 @@ import { defaultScriptsDir } from "./paths.js"
 import { fileURLToPath } from "node:url"
 import { bold, dim, cyan, yellow, ok, fail } from "./ui.js"
 import { describeAckError } from "./page-access.js"
+import {
+  CAPABILITIES_REQUEST,
+  CONTAINER_TOO_OLD,
+  containerFlag,
+  focusContainer,
+  supportsContainers,
+} from "./container.js"
 
 const browserApp = () => process.env.FOXHOP_BROWSER ?? "Firefox Nightly"
 // Use the absolute path: `open` lives in /usr/bin, which isn't always on PATH
@@ -67,6 +74,16 @@ const oneOf = <T extends string>(
 // extension never answered) falls back to opening the URL once when the
 // caller wants that — focus, so the action still does something. Paste/read
 // have nothing useful to do remotely, so they just fail.
+// Exits before a request that names a container when the extension cannot
+// honour one, so nothing is pasted into or opened in the default container.
+const requireContainerSupport = async (container?: string) => {
+  if (!container) return
+  const ack = await sendToHost(CAPABILITIES_REQUEST)
+  if (supportsContainers(ack)) return
+  console.error(fail(CONTAINER_TOO_OLD))
+  process.exit(1)
+}
+
 const onHostError = (error: unknown, fallbackUrl?: string): void => {
   const code = (error as NodeJS.ErrnoException)?.code
   if (code === "ECONNREFUSED" || code === "ENOENT") {
@@ -123,8 +140,16 @@ const focus = defineCommand({
       type: "string",
       description: "recent | first | pinned (which tab when several match)",
     },
+    container: {
+      type: "string",
+      description:
+        "Firefox container to look in and open in (overrides the target's own; \"\" for the default container)",
+    },
   },
   run: async ({ args }) => {
+    const named = args.match
+      ? null
+      : resolveNamed(String(args.name ?? ""), args.url)
     const request = args.match
       ? {
           op: "focus",
@@ -132,8 +157,12 @@ const focus = defineCommand({
           url: args.url,
           strategy: args.strategy ?? "hostname",
           pick: args.pick ?? "recent",
+          container: containerFlag(args.container),
         }
-      : resolveNamed(String(args.name ?? ""), args.url)
+      : named && {
+          ...named,
+          container: focusContainer(args.container, named.container),
+        }
 
     if (!request) {
       console.error(
@@ -145,6 +174,7 @@ const focus = defineCommand({
     }
 
     try {
+      await requireContainerSupport(request.container)
       const ack = await sendToHost(request)
       if (ack?.ok && ack.action !== "not-found") {
         foreground()
@@ -182,6 +212,7 @@ const resolveNamed = (name: string, url?: string) => {
     // dropped by JSON.stringify, so focus requests are unchanged on the wire.
     into: target.into,
     from: target.from,
+    container: target.container,
     ...(url && target.navigate ? { navigateTo: url } : {}),
   }
 }
@@ -236,6 +267,7 @@ const paste = defineCommand({
     const timeoutMs = 20000
     const request = { ...base, op: "paste", text, timeoutMs }
     try {
+      await requireContainerSupport(request.container)
       const ack = await sendToHost(request, timeoutMs + 6000)
       if (ack?.ok && "filled" in ack) {
         foreground()
@@ -311,12 +343,14 @@ const read = defineCommand({
       match: base.match,
       strategy: base.strategy,
       pick: base.pick,
+      container: base.container,
       from,
       last: Boolean(args.last),
       wait: Boolean(args.wait),
       timeoutMs,
     }
     try {
+      await requireContainerSupport(request.container)
       const ack = await sendToHost(request, timeoutMs + 6000)
       if (ack?.ok && Array.isArray(ack.texts)) {
         process.stdout.write(ack.texts.join("\n\n") + "\n")
@@ -369,9 +403,48 @@ const list = defineCommand({
     const width = Math.max(...ordered.map((target) => target.name.length))
     for (const target of ordered) {
       const star = target.favorite ? yellow("★") : " "
+      const container = target.container ? `  [${target.container}]` : ""
       console.log(
-        `${star} ${cyan(target.name.padEnd(width))}  ${dim(target.match)}`,
+        `${star} ${cyan(target.name.padEnd(width))}  ${dim(target.match)}${container}`,
       )
+    }
+  },
+})
+
+const open = defineCommand({
+  meta: {
+    name: "open",
+    description:
+      "Open a URL in a new Firefox tab, in a container when --container is given",
+  },
+  args: {
+    url: {
+      type: "positional",
+      required: true,
+      description: "http(s) URL to open",
+    },
+    container: {
+      type: "string",
+      description: "Firefox container to open it in (by name, case ignored)",
+    },
+  },
+  run: async ({ args }) => {
+    const request = {
+      op: "open",
+      url: String(args.url),
+      container: containerFlag(args.container),
+    }
+    try {
+      await requireContainerSupport(request.container)
+      const ack = await sendToHost(request)
+      if (ack?.ok && ack.action === "opened") {
+        foreground()
+        return
+      }
+      console.error(fail(ack?.error ?? "could not open the url"))
+      process.exit(1)
+    } catch (error) {
+      onHostError(error)
     }
   },
 })
@@ -503,6 +576,10 @@ const add = defineCommand({
       description: "recent | first | pinned (which tab when several match)",
     },
     favorite: { type: "boolean", description: "Pin to the top of the list" },
+    container: {
+      type: "string",
+      description: "Firefox container to look in and open in (by name)",
+    },
     navigate: {
       type: "boolean",
       description:
@@ -545,6 +622,7 @@ const add = defineCommand({
         pick: pick ?? existing?.pick,
         favorite: args.favorite || existing?.favorite ? true : undefined,
         navigate: (args.navigate ?? existing?.navigate) ? true : undefined,
+        container: containerFlag(args.container) ?? existing?.container,
       },
       resync,
     )
@@ -557,7 +635,7 @@ const edit = defineCommand({
   meta: {
     name: "edit",
     description:
-      "Edit a saved target in place — the id never changes (pass \"\" to clear --title/--url/--into/--from)",
+      "Edit a saved target in place — the id never changes (pass \"\" to clear --title/--url/--into/--from/--container)",
   },
   args: {
     name: {
@@ -591,6 +669,11 @@ const edit = defineCommand({
       description:
         "CSS selector `foxhop read` prints when no --from is given (pass \"\" to clear)",
     },
+    container: {
+      type: "string",
+      description:
+        "Firefox container to look in and open in (pass \"\" to clear)",
+    },
   },
   run: ({ args }) => {
     const name = String(args.name)
@@ -599,6 +682,8 @@ const edit = defineCommand({
     if (args.url !== undefined) patch.url = args.url.trim() || undefined
     if (args.into !== undefined) patch.into = args.into.trim() || undefined
     if (args.from !== undefined) patch.from = args.from.trim() || undefined
+    if (args.container !== undefined)
+      patch.container = containerFlag(args.container)
     if (args.match !== undefined) {
       if (!args.match.trim()) {
         console.error(fail("--match cannot be empty"))
@@ -672,6 +757,7 @@ const fav = defineCommand({
 const NAME = "foxhop"
 const subCommands = {
   focus,
+  open,
   paste,
   read,
   list,

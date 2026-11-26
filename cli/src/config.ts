@@ -25,6 +25,7 @@ export interface Target {
   favorite?: boolean
   into?: string
   from?: string
+  container?: string
 }
 
 export interface Config {
@@ -136,6 +137,11 @@ const SCHEMA = {
             type: "string",
             description:
               "CSS selector `foxhop read` prints when no --from is given",
+          },
+          container: {
+            type: "string",
+            description:
+              "Name of the Firefox container to look in and open the URL in (case ignored). Never created: an unknown name is an error.",
           },
         },
       },
