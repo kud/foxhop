@@ -4,6 +4,15 @@ All notable changes to `@kud/foxhop-cli` are documented here.
 
 ---
 
+## Unreleased
+
+### Highlights
+
+- **Open URLs in Firefox containers.** A target can name a `container`: focusing it looks only at tabs in that container and opens the URL there when none matches, and `paste` and `read` follow the same rule. `foxhop open <url> --container <name>` opens an ad-hoc URL in a new tab in that container, and `focus --container` overrides a target's saved one for a single call (`""` means the default container). Names are matched ignoring case; an unknown name fails with the list of containers that exist, and foxhop never creates one. Needs foxhop extension 1.6.0 or later: with an older one, foxhop stops before acting rather than using the default container. ([439bb50](https://github.com/kud/foxhop/commit/439bb50917e8ea45c5b1b90a8623d450d3d87765))
+- **Paste into and read from a target's tab.** `foxhop paste <target>` fills a text box on the target's tab with stdin or the clipboard, without submitting; `foxhop read <target>` prints the text of matching elements, with `--last` and `--wait`. Targets can save the selectors as `into` and `from`. Both need page access, granted from the extension's options page. ([cb66bc0](https://github.com/kud/foxhop/commit/cb66bc0))
+
+---
+
 ## [2.1.0] — 2026-10-07
 
 ### Highlights
