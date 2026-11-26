@@ -26,7 +26,13 @@ import { defaultScriptsDir } from "./paths.js"
 import { fileURLToPath } from "node:url"
 import { bold, dim, cyan, yellow, ok, fail } from "./ui.js"
 import { describeAckError } from "./page-access.js"
-import { containerIgnored, containerFlag, CONTAINER_TOO_OLD } from "./container.js"
+import {
+  CAPABILITIES_REQUEST,
+  CONTAINER_TOO_OLD,
+  containerFlag,
+  focusContainer,
+  supportsContainers,
+} from "./container.js"
 
 const browserApp = () => process.env.FOXHOP_BROWSER ?? "Firefox Nightly"
 // Use the absolute path: `open` lives in /usr/bin, which isn't always on PATH
@@ -68,6 +74,16 @@ const oneOf = <T extends string>(
 // extension never answered) falls back to opening the URL once when the
 // caller wants that — focus, so the action still does something. Paste/read
 // have nothing useful to do remotely, so they just fail.
+// Exits before a request that names a container when the extension cannot
+// honour one, so nothing is pasted into or opened in the default container.
+const requireContainerSupport = async (container?: string) => {
+  if (!container) return
+  const ack = await sendToHost(CAPABILITIES_REQUEST)
+  if (supportsContainers(ack)) return
+  console.error(fail(CONTAINER_TOO_OLD))
+  process.exit(1)
+}
+
 const onHostError = (error: unknown, fallbackUrl?: string): void => {
   const code = (error as NodeJS.ErrnoException)?.code
   if (code === "ECONNREFUSED" || code === "ENOENT") {
@@ -127,11 +143,10 @@ const focus = defineCommand({
     container: {
       type: "string",
       description:
-        "Firefox container to look in and open in (overrides the target's own)",
+        "Firefox container to look in and open in (overrides the target's own; \"\" for the default container)",
     },
   },
   run: async ({ args }) => {
-    const container = containerFlag(args.container)
     const named = args.match
       ? null
       : resolveNamed(String(args.name ?? ""), args.url)
@@ -142,9 +157,12 @@ const focus = defineCommand({
           url: args.url,
           strategy: args.strategy ?? "hostname",
           pick: args.pick ?? "recent",
-          container,
+          container: containerFlag(args.container),
         }
-      : named && { ...named, container: container ?? named.container }
+      : named && {
+          ...named,
+          container: focusContainer(args.container, named.container),
+        }
 
     if (!request) {
       console.error(
@@ -156,10 +174,10 @@ const focus = defineCommand({
     }
 
     try {
+      await requireContainerSupport(request.container)
       const ack = await sendToHost(request)
       if (ack?.ok && ack.action !== "not-found") {
         foreground()
-        if (containerIgnored(request, ack)) console.error(fail(CONTAINER_TOO_OLD))
         // An extension predating navigation ignores navigateTo and just
         // focuses — the user asked for a specific page, so say so.
         if ("navigateTo" in request && ack.navigated === undefined) {
@@ -249,11 +267,8 @@ const paste = defineCommand({
     const timeoutMs = 20000
     const request = { ...base, op: "paste", text, timeoutMs }
     try {
+      await requireContainerSupport(request.container)
       const ack = await sendToHost(request, timeoutMs + 6000)
-      if (ack?.ok && containerIgnored(request, ack)) {
-        console.error(fail(CONTAINER_TOO_OLD))
-        process.exit(1)
-      }
       if (ack?.ok && "filled" in ack) {
         foreground()
         return
@@ -335,11 +350,8 @@ const read = defineCommand({
       timeoutMs,
     }
     try {
+      await requireContainerSupport(request.container)
       const ack = await sendToHost(request, timeoutMs + 6000)
-      if (ack?.ok && Array.isArray(ack.texts) && containerIgnored(request, ack)) {
-        console.error(fail(CONTAINER_TOO_OLD))
-        process.exit(1)
-      }
       if (ack?.ok && Array.isArray(ack.texts)) {
         process.stdout.write(ack.texts.join("\n\n") + "\n")
         return
@@ -423,11 +435,8 @@ const open = defineCommand({
       container: containerFlag(args.container),
     }
     try {
+      await requireContainerSupport(request.container)
       const ack = await sendToHost(request)
-      if (ack?.ok && containerIgnored(request, ack)) {
-        console.error(fail(CONTAINER_TOO_OLD))
-        process.exit(1)
-      }
       if (ack?.ok && ack.action === "opened") {
         foreground()
         return

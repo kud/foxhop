@@ -1,6 +1,10 @@
 import { matchesTarget } from "./match.js"
 import { pasteInPage, readInPage } from "./page.js"
-import { resolveContainer } from "./container.js"
+import {
+  resolveContainer,
+  pickContainerWindow,
+  EXTENSION_CAPABILITIES,
+} from "./container.js"
 
 const HOST_NAME = "io.kud.foxhop"
 
@@ -29,6 +33,19 @@ const chooseTab = (matches, pick) => {
 // target has none, `{ error }` when the name matches no container.
 const containerScope = (container) =>
   container ? resolveContainer(browser.contextualIdentities, container) : null
+
+// Where a new tab in a container goes: its cookieStoreId plus a normal
+// window, since Firefox refuses a container tab in a private one. Empty when
+// there is no container, `{ error }` when every window is private.
+const containerTabPlacement = async (scope) => {
+  if (!scope) return {}
+  const placed = pickContainerWindow(
+    await browser.windows.getLastFocused(),
+    await browser.windows.getAll({ windowTypes: ["normal"] }),
+  )
+  if (placed.error) return placed
+  return { cookieStoreId: scope.cookieStoreId, windowId: placed.windowId }
+}
 
 // Tab choosing shared by focus, paste and read: filter by the target's match
 // (and its container's cookieStoreId, when it has one), then pick. Null when
@@ -81,8 +98,7 @@ const focusTab = async ({
   const inContainer = scope
     ? { cookieStoreId: scope.cookieStoreId }
     : {}
-  // Echoed back so the CLI can tell a container-aware extension from an older
-  // one that would have ignored the container and used the default.
+  // Echoed back so a caller can see which container the tab is in.
   const containerAck = scope ? { container: scope.name } : {}
   const destination = navigateTo ? normaliseUrl(navigateTo) : null
   if (
@@ -118,7 +134,9 @@ const focusTab = async ({
 
   const openUrl = destination ?? url
   if (openUrl) {
-    const created = await browser.tabs.create({ url: openUrl, ...inContainer })
+    const placement = await containerTabPlacement(scope)
+    if (placement.error) return { ok: false, error: placement.error }
+    const created = await browser.tabs.create({ url: openUrl, ...placement })
     await focusWindow(created.windowId)
     return {
       action: "opened",
@@ -139,10 +157,9 @@ const openTab = async ({ url, container }) => {
   if (!destination) return { ok: false, error: `not an http(s) url: ${url}` }
   const scope = await containerScope(container)
   if (scope?.error) return { ok: false, error: scope.error }
-  const created = await browser.tabs.create({
-    url: destination,
-    ...(scope ? { cookieStoreId: scope.cookieStoreId } : {}),
-  })
+  const placement = await containerTabPlacement(scope)
+  if (placement.error) return { ok: false, error: placement.error }
+  const created = await browser.tabs.create({ url: destination, ...placement })
   await focusWindow(created.windowId)
   return {
     ok: true,
@@ -250,6 +267,8 @@ const handle = async (request) => {
   if (request.op === "paste") return paste(request)
   if (request.op === "read") return read(request)
   if (request.op === "open") return openTab(request)
+  if (request.op === "capabilities")
+    return { ok: true, capabilities: EXTENSION_CAPABILITIES }
   return { ok: true, ...(await focusTab(request)) }
 }
 

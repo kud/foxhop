@@ -1,8 +1,14 @@
 import { describe, it, expect, vi } from "vitest"
-import { resolveContainer } from "../../webext/src/container.js"
+import {
+  resolveContainer,
+  EXTENSION_CAPABILITIES,
+  pickContainerWindow,
+} from "../../webext/src/container.js"
 import {
   containerFlag,
-  containerIgnored,
+  supportsContainers,
+  focusContainer,
+  CAPABILITIES_REQUEST,
   CONTAINER_TOO_OLD,
 } from "../src/container.js"
 
@@ -83,41 +89,56 @@ describe("resolveContainer", () => {
   })
 })
 
-describe("containerIgnored", () => {
-  const asked = { container: "Personal" }
-
-  it("is true when a container was asked and the ack does not echo one", () => {
-    expect(containerIgnored(asked, { ok: true, action: "focused" })).toBe(true)
+describe("supportsContainers", () => {
+  it("is true when the extension lists the container capability", () => {
+    expect(supportsContainers({ ok: true, capabilities: ["container"] })).toBe(
+      true,
+    )
   })
 
-  it("is false when the ack echoes the container", () => {
-    expect(
-      containerIgnored(asked, {
-        ok: true,
-        action: "opened",
-        container: "Personal",
-      }),
-    ).toBe(false)
-  })
-
-  it("is false when no container was asked", () => {
-    expect(containerIgnored({}, { ok: true, action: "opened" })).toBe(false)
-    expect(containerIgnored({ container: "" }, { ok: true })).toBe(false)
-  })
-
-  it("is false when the ack is not ok or missing", () => {
-    expect(containerIgnored(asked, { ok: false })).toBe(false)
-    expect(containerIgnored(asked, null)).toBe(false)
-  })
-
-  it("is false when nothing was found, since nothing was opened", () => {
-    expect(containerIgnored(asked, { ok: true, action: "not-found" })).toBe(
+  it("is false for an old extension, which answers the probe as a focus that found nothing", () => {
+    expect(supportsContainers({ ok: true, action: "not-found" } as never)).toBe(
       false,
     )
   })
 
-  it("has a message pointing at updating the extension", () => {
+  it("is false when the capability is missing, the ack failed or is absent", () => {
+    expect(supportsContainers({ ok: true, capabilities: [] })).toBe(false)
+    expect(supportsContainers({ ok: false, capabilities: ["container"] })).toBe(
+      false,
+    )
+    expect(supportsContainers(null)).toBe(false)
+  })
+
+  it("probes with an op an old extension treats as a no-op focus", () => {
+    expect(CAPABILITIES_REQUEST).toEqual({ op: "capabilities" })
+    expect(CAPABILITIES_REQUEST).not.toHaveProperty("url")
+    expect(CAPABILITIES_REQUEST).not.toHaveProperty("match")
+  })
+
+  it("says nothing was opened and points at updating", () => {
     expect(CONTAINER_TOO_OLD).toContain("update")
+    expect(CONTAINER_TOO_OLD).toContain("nothing was opened")
+  })
+})
+
+describe("the extension answers the capabilities probe", () => {
+  it("lists the container capability", () => {
+    expect(EXTENSION_CAPABILITIES).toContain("container")
+  })
+})
+
+describe("focusContainer", () => {
+  it("uses the saved container when no flag is given", () => {
+    expect(focusContainer(undefined, "Shopping")).toBe("Shopping")
+  })
+
+  it("lets the flag override the saved container", () => {
+    expect(focusContainer(" Personal ", "Shopping")).toBe("Personal")
+  })
+
+  it("treats an empty flag as the default container for this call", () => {
+    expect(focusContainer("", "Shopping")).toBeUndefined()
   })
 })
 
@@ -135,5 +156,29 @@ describe("containerFlag", () => {
     for (const value of [undefined, null, true, 3, ["Personal"]]) {
       expect(containerFlag(value)).toBeUndefined()
     }
+  })
+})
+
+describe("pickContainerWindow", () => {
+  it("uses the last-focused window when it is not private", () => {
+    expect(pickContainerWindow({ id: 1, incognito: false }, [])).toEqual({
+      windowId: 1,
+    })
+  })
+
+  it("falls back to a normal window when the focused one is private", () => {
+    expect(
+      pickContainerWindow({ id: 1, incognito: true }, [
+        { id: 1, incognito: true },
+        { id: 2, incognito: false },
+      ]),
+    ).toEqual({ windowId: 2 })
+  })
+
+  it("errors when every window is private", () => {
+    const result = pickContainerWindow({ id: 1, incognito: true }, [
+      { id: 1, incognito: true },
+    ])
+    expect(result).toHaveProperty("error")
   })
 })

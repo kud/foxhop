@@ -43,3 +43,20 @@ export const resolveContainer = async (contextualIdentities, name) => {
       : `unknown container "${name}": no containers exist yet`,
   }
 }
+
+// What this extension can do beyond focusing, answered to the CLI's
+// `capabilities` probe before it sends a request that names a container.
+export const EXTENSION_CAPABILITIES = ["container"]
+
+// Firefox refuses a container tab in a private window, so a container tab goes
+// to the last-focused window when it is a normal one, else to any normal
+// window: `{ windowId }`, or `{ error }` when every window is private.
+export const pickContainerWindow = (lastFocused, windows) => {
+  if (lastFocused && !lastFocused.incognito) return { windowId: lastFocused.id }
+  const normal = (windows ?? []).find((win) => !win.incognito)
+  if (normal) return { windowId: normal.id }
+  return {
+    error:
+      "containers are not available in private windows: open a normal Firefox window",
+  }
+}
